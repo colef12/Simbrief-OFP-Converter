@@ -32,6 +32,7 @@ PSA conventions applied:
 - **PAX/BAG** = seat / bag capacity.
 - Nav log **ADBO** = planned fuel remaining at the fix; **FRMG** = planned burn from that fix to the next.
 - TLR is filled when SimBrief has takeoff/landing data for the aircraft type; MEL placards come from Settings.
+- **Field reports** (after NOTAMs): field conditions per station built from TLR runways, runway-closure and taxiway NOTAMs, and METAR surface weather (DRY 6/6/6, WET 5/5/5, contaminated → see NOTAMs), plus deicing reports from METAR temperature and precipitation. Station frequencies are N/A (not in SimBrief); station remarks come from Settings.
 
 ### Republic Airways (RPA)
 
@@ -49,7 +50,7 @@ RPA conventions applied:
 - **General** (all formats): kg → lbs conversion, callsign override, fleet numbers, type designation overrides.
 - **Crew & dispatch** (all formats): captain/F-O employee numbers, dispatch desk.
 - **Format-specific** settings appear only when that format is selected.
-  - PSA: ACARS header lines, standard route #, dispatcher phone, BOW ARM, MEL placards.
+  - PSA: ACARS header lines, standard route #, dispatcher phone, BOW ARM, MEL placards, field report remarks.
   - RPA: airline name, aircraft line suffix (e.g. `E75L=/SAT/NEW ACARS`), max ramp weight, MEL/NEF and CDL lists.
 
 ## Adding a format

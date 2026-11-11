@@ -6,6 +6,7 @@
  */
 (function (root) {
   'use strict';
+  const C = typeof module !== 'undefined' && module.exports ? require('./common.js') : root.OFPCommon;
 
   // ---------- generic helpers ----------
   const MONTHS = ['JAN', 'FEB', 'MAR', 'APR', 'MAY', 'JUN', 'JUL', 'AUG', 'SEP', 'OCT', 'NOV', 'DEC'];
@@ -605,6 +606,97 @@
         });
       });
     });
+    return lines.join('\n');
+  }
+
+  // ---------- field conditions + deicing reports (built from METAR, TLR and NOTAMs) ----------
+  function metarWx(metar) {
+    const m = ` ${up(metar)} `;
+    const tm = m.match(/\s(M?\d{2})\/(M?\d{2})?\s/);
+    const temp = tm ? Number(tm[1].replace('M', '-')) : null;
+    const frozen = /\s[-+]?(VC)?(FZ|SH|BL)?(SN|SG|PL|GS|GR|IC)|\s[-+]?(VC)?FZ(RA|DZ|FG)/.test(m);
+    const wet = /\s[-+]?(VC)?(TS|SH)?(RA|DZ|UP)|\sTS(RA)?\s/.test(m);
+    const fog = /\s(BR|FG)\s/.test(m);
+    return { temp, frozen, wet, fog };
+  }
+  function surface(p, o) {
+    const tlrCond = [o.tlr?.takeoff?.conditions, o.tlr?.landing?.conditions].find((c) => up(c?.airport_icao) === p.icao);
+    const sc = up(tlrCond?.surface_condition);
+    const wx = metarWx(p.metar);
+    if (wx.frozen || /SNOW|ICE|SLUSH|CONTAM/.test(sc)) return { cond: 'CONTAM', rcc: '3/3/3', desc: 'SEE NOTAMS' };
+    if (wx.wet || /WET/.test(sc)) return { cond: 'WET', rcc: '5/5/5', desc: 'WET' };
+    return { cond: 'DRY', rcc: '6/6/6', desc: 'BARE DRY' };
+  }
+  function fieldSection(o) {
+    const s = o.settings;
+    const gen = o.generated || new Date();
+    const seq = `${Z(gen.getUTCDate(), 2)}${hhmm(gen)}`;
+    const dash = '-'.repeat(62);
+    const remarks = parseMap(s.fieldRemarks);
+    const ports = [o.origin, o.dest].filter(Boolean);
+    const lines = ['PILOT REPORTS', ' NONE', 'FIELD CONDITIONS'];
+    ports.forEach((p) => {
+      const local = addMin(gen, (p.tz || 0) * 60);
+      const sf = surface(p, o);
+      const rwSrc = [o.tlr?.takeoff, o.tlr?.landing].filter((x) => up(x?.conditions?.airport_icao) === p.icao).flatMap((x) => asArray(x.runway));
+      const strips = C.runwayStrips(rwSrc);
+      const notams = p.notams.map((n) => up(n.notam_text));
+      const closed = (name) => name.split('/').some((id) => notams.some((t) => new RegExp(`^RWY\\s*(\\d{2}[LRC]?/)?${id}(/\\d{2}[LRC]?)?\\s+CLSD`).test(t)));
+      lines.push(`${p.code} ${seq}`);
+      lines.push('/FC');
+      lines.push(` * ${p.code} FIELD REPORT * `);
+      lines.push(dash);
+      lines.push(`DATE ${ddmmmyy(local)} TIME ${hhmm(local)} LOCAL`);
+      lines.push(dash);
+      lines.push('EXISTING TAA SEE NOTAMS');
+      lines.push(dash);
+      lines.push('RWY      STATUS  CONDITIONS          REMARKS');
+      if (!strips.length) lines.push(`ALL      OPEN    ${L(sf.cond, 6)} ${L(sf.rcc, 12)} ${sf.desc}`);
+      strips.forEach((r) => {
+        const c = closed(r.name);
+        lines.push(L(r.name.replace('/', ' /'), 9) + L(c ? 'CLSD' : 'OPEN', 8) + (c ? 'SEE NOTAMS' : `${L(sf.cond, 6)} ${L(sf.rcc, 12)} ${sf.desc}`));
+      });
+      lines.push(`RAMP/TXWY SURFACE ${L(sf.cond, 6)} ${L(sf.rcc, 9)} ${sf.desc}`);
+      lines.push(dash);
+      lines.push('SPECIAL ADVISORIES');
+      strips.filter((r) => !closed(r.name)).forEach((r) => lines.push(`RWY ${r.name} ${sf.rcc} ${sf.desc}`));
+      p.notams.filter((n) => /^TWY\b.*\bCLSD\b/.test(up(n.notam_text))).slice(0, 6)
+        .forEach((n) => lines.push(...wrap(`${p.code} ${up(n.notam_text)}`, 62, ' ')));
+      lines.push(dash);
+      lines.push('OPS RADIO FREQ N/A      OPS PHONE N/A');
+      lines.push('ATIS FREQ      N/A      ATIS PHONE N/A');
+      lines.push('MAINT FREQ     N/A      MAINT PHONE N/A');
+      lines.push('ACARS FREQ N/A GROUND PWR YES GROUND AIR YES');
+      lines.push(dash);
+      lines.push('REMARKS');
+      const rm = String(remarks[p.icao] || remarks[p.code] || '').split('|').map((x) => x.trim()).filter(Boolean);
+      (rm.length ? rm : ['NONE']).forEach((r) => lines.push(...wrap(r, 62, ' ')));
+      lines.push(`UPDATED ${hhmm(local)}/${ddmmmyy(local).slice(0, 5)} DISPATCH`);
+    });
+    lines.push(' END DATA');
+    lines.push(' DEICING CONDITIONS');
+    ports.forEach((p) => {
+      const local = addMin(gen, (p.tz || 0) * 60);
+      const wx = metarWx(p.metar);
+      lines.push(`${p.code} ${seq}`);
+      lines.push('/DI');
+      lines.push(` * ${p.code} DEICING REPORT *`);
+      lines.push(dash);
+      lines.push(`DATE ${ddmmmyy(local)} TIME ${hhmm(local)} LOCAL`);
+      lines.push(dash);
+      if (wx.temp == null) lines.push('NO CURRENT WEATHER -- CONTACT DISPATCH');
+      else if (wx.frozen || (wx.temp <= 5 && (wx.wet || wx.fog))) {
+        lines.push(`OAT ${wx.temp}C ${wx.frozen ? 'FROZEN PRECIPITATION' : 'VISIBLE MOISTURE'} REPORTED`);
+        lines.push('DEICING CONDITIONS EXIST -- CONTACT DISPATCH / DEICE PAD');
+      } else if (wx.temp <= 5) {
+        lines.push(`OAT ${wx.temp}C -- CHECK FOR FROST / COLD SOAK`);
+        lines.push('DEICING NOT IN PROGRESS');
+      } else {
+        lines.push(`OAT ${wx.temp}C -- NO DEICING REQUIRED`);
+        lines.push('DEICING NOT IN PROGRESS');
+      }
+      lines.push(`UPDATED ${hhmm(local)}/${ddmmmyy(local).slice(0, 5)} DISPATCH`);
+    });
     lines.push(' END DATA');
     return lines.join('\n');
   }
@@ -621,6 +713,7 @@
       { id: 'tlr', title: 'TLR', text: tlrSection(o), newPage: true },
       { id: 'wx', title: 'Weather', text: weatherSection(o), newPage: true },
       { id: 'notams', title: 'NOTAMs', text: notamSection(o) },
+      { id: 'field', title: 'Field Reports', text: fieldSection(o) },
     ];
     return sec.filter((s) => s.text);
   }
