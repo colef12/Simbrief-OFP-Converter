@@ -119,6 +119,7 @@
       if (!lastSections.some((s) => s.id === devicePage)) devicePage = lastSections[0]?.id;
       showPage(devicePage);
       restoreInputs();
+      currentFormat().enhance?.(els.paper);
     }
     els.empty.hidden = true;
     els.output.hidden = false;

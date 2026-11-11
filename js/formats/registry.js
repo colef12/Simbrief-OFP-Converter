@@ -2,6 +2,7 @@
  * Format registry. Each format file calls OFPFormats.register({
  *   id, name, description, settingsGroup?, device?, format(ofp, settings) -> [{ id, title, text, html?, newPage? }]
  * `html` (already escaped) renders instead of `text`; `text` is still used for Copy / .txt.
+ * `enhance(paperEl)` (optional) runs after render to wire live behaviour.
  * `device: 'ipad'` drops the paper styling so the format can draw its own device frame.
  * }). Load this file before any format files.
  */
