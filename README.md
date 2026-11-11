@@ -19,7 +19,7 @@ No login or password is needed. SimBrief's public API returns your most recently
 |---|---|---|
 | `psa` | PSA Airlines CRJ dispatch release (ACARS-printed OFP) | ✅ Available |
 | `rpa` | Republic Airways E-Jet flight brief (Navtech-style release) | ✅ Available |
-| `missionplus` | Mission+ iPad EFB — Dashboard page | ✅ Available (more pages planned) |
+| `missionplus` | Mission+ iPad EFB — Dashboard, Nav Log | ✅ Available (more pages planned) |
 | … | More niche formats | Planned |
 
 ### PSA Airlines
@@ -98,3 +98,5 @@ For flight simulation use only. Not for real-world navigation or dispatch.
 ### Mission+ (iPad EFB)
 
 Renders as an iPad screen instead of a printout. **Dashboard** page: flight ID (callsign/fleet #), ops type, route timeline (origin, destination, primary alternate) with STD/STA in Z and local, scheduled block, flight time, time to alternate, landing window, T/O and landing weights, block fuel, fuel at TOC, min T/O fuel, plan landing fuel, min landing fuel at destination (reserve + alternate), available delay fuel, NOTAM counts (origin / enroute + alternate / destination), tap-to-expand METAR/TAF tiles, release, crew and aircraft status. Copy / .txt give a plain-text summary.
+
+**Nav Log** page (tap the Nav Log tab in the device or the toolbar): origin row plus every SimBrief fix with RETA/ETA (takeoff + cumulative time), TCUM, planned fuel remaining (PRMG, klb) and planned FL (cruise/TOC/TOD), entry boxes for ATA, actual fuel remaining (ARMG) and actual FL that are saved in your browser per flight, and leg data between fixes (airway — blank hexagon for SID/STAR legs — distance, time, fuel to nearest 100 lb, Mach). FIR boundaries are marked when SimBrief supplies FIR ids. Up/down buttons page through the list.

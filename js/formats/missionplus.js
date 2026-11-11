@@ -41,6 +41,11 @@
     swap: '<path d="M3 9h14l-3-3M21 15H7l3 3"/>',
     crew: '<circle cx="12" cy="7" r="3"/><path d="M6 21v-4a6 6 0 0 1 12 0v4M9 14l3 4 3-4"/>',
     batt: '<rect x="2" y="7" width="17" height="10" rx="2"/><path d="M21 10v4"/><rect x="4" y="9" width="6" height="6" fill="currentColor" stroke="none"/>',
+    chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9h8M8 12h5"/>',
+    chev: '<path d="M6 9l6 6 6-6"/>',
+    up: '<path d="M5 15l7-7 7 7"/>',
+    down: '<path d="M5 9l7 7 7-7"/>',
+    expand: '<path d="M4 9V4h5M4 4l6 6M20 15v5h-5M20 20l-6-6M15 4h5v5M20 4l-6 6M9 20H4v-5M4 20l6-6"/>',
     db: '<ellipse cx="12" cy="6" rx="7" ry="3"/><path d="M5 6v12c0 1.7 3 3 7 3s7-1.3 7-3V6M5 12c0 1.7 3 3 7 3s7-1.3 7-3"/>',
   };
   const ico = (k, cls = '') => `<svg class="mp-ico ${cls}" viewBox="0 0 24 24" aria-hidden="true">${I[k]}</svg>`;
@@ -55,7 +60,8 @@
     const sIn = date(t.sched_in) || date(t.est_in);
     const eOut = date(t.est_out) || sOut;
     const eIn = date(t.est_in) || sIn;
-    const eOn = date(t.est_on) || addSec(eIn, -secs(t.taxi_in));
+    const eOff = date(t.est_off) || addSec(eOut, secs(t.taxi_out));
+    const eOn = date(t.est_on) || addSec(eOff, secs(t.est_time_enroute)) || addSec(eIn, -secs(t.taxi_in));
 
     const toc = o.navlog.find((x) => up(x.ident) === 'TOC');
     const res = W(f.reserve), altBurn = W(f.alternate_burn);
@@ -71,7 +77,7 @@
       flightId: `${o.callsign}/${o.fleet}`,
       dateTag: dMon(sOut),
       current: !eIn || eIn.getTime() > now.getTime(),
-      sOut, sIn, eOut, eIn, eOn,
+      sOut, sIn, eOut, eIn, eOff, eOn,
       tzO: tzOf(o.origin, t.orig_timezone), tzD: tzOf(o.dest, t.dest_timezone),
       block: sOut && sIn ? (sIn - sOut) / 1000 : secs(t.sched_block),
       air: secs(t.est_time_enroute),
@@ -90,25 +96,16 @@
     };
   }
 
-  function html(m) {
-    const { o, alt, fuel } = m;
-    const O = o.origin || {}, D = o.dest || {};
-    const tlwFrom = m.eOn ? new Date(m.eOn.getTime() - 4 * 60000) : null;
-    const tabs = [
-      ['home', 'Dashboard', 0, true], ['prep', 'Flt Prep'], ['plane', 'In Flight'], ['list', 'Nav Log'],
-      ['folder', 'NOTAM', m.notams.o + m.notams.e + m.notams.d], ['wx', 'Weather', [O.metar, D.metar, alt?.metar].filter(Boolean).length],
-      ['folder', 'Other Docs'], ['post', 'Post Flight'], ['more', 'Others'],
-    ];
-    const cell = (label, val, cls = '') => `<div class="mp-f"><div class="mp-fl">${esc(label)}</div><div class="mp-fv ${cls}">${esc(val)}</div></div>`;
-    const docTile = (n) => `<div class="mp-tile">${ico('doc', 'mp-ti')}<b>${n}</b><span class="mp-pill">${ico('eye')}${n}</span></div>`;
-    const wxTile = (ports) => {
-      const withWx = ports.filter((p) => p && (p.metar || p.taf));
-      if (!withWx.length) return `<div class="mp-tile">${ico('sun', 'mp-ti')}<span class="mp-pill off">METAR</span></div>`;
-      return `<details class="mp-tile mp-wx"><summary>${ico('sun', 'mp-ti')}<span class="mp-pill">METAR</span></summary>${
-        withWx.map((p) => `<pre>${esc([p.metar, p.taf].filter(Boolean).join('\n'))}</pre>`).join('')}</details>`;
-    };
-    const person = (p) => `<div class="mp-person">${ico('crew', 'mp-pi')}<div><div class="mp-pn">${esc(p.name)}</div><div class="mp-pr">${esc(p.role)} (${esc(p.emp)})</div></div></div>`;
+  const TABS = [
+    ['home', 'Dashboard', 'dashboard'], ['prep', 'Flt Prep'], ['plane', 'In Flight'], ['list', 'Nav Log', 'navlog'],
+    ['folder', 'NOTAM', null, 'notam'], ['wx', 'Weather', null, 'wx'], ['folder', 'Other Docs'], ['post', 'Post Flight'], ['more', 'Others'],
+  ];
 
+  // Status bar, header and tab bar shared by every page
+  function chrome(m, page, body) {
+    const { o, alt } = m;
+    const O = o.origin || {}, D = o.dest || {};
+    const badge = { notam: m.notams.o + m.notams.e + m.notams.d, wx: [O.metar, D.metar, alt?.metar].filter(Boolean).length };
     return `
 <div class="mp-device"><div class="mp-screen">
   <div class="mp-status">
@@ -127,8 +124,30 @@
     <span class="mp-hbtn">${ico('more')}</span>
   </div>
 
-  <nav class="mp-tabs">${tabs.map(([k, l, n, on]) => `<div class="mp-tab${on ? ' on' : ''}">${ico(k)}${n ? `<i class="mp-badge">${n}</i>` : ''}<span>${esc(l)}</span></div>`).join('')}</nav>
+  <nav class="mp-tabs">${TABS.map(([k, l, pg, bk]) => {
+    const n = bk ? badge[bk] : 0;
+    const attrs = pg ? ` data-mp-page="${pg}" role="button" tabindex="0"` : '';
+    return `<div class="mp-tab${pg === page ? ' on' : ''}${pg ? ' live' : ''}"${attrs}>${ico(k)}${n ? `<i class="mp-badge">${n}</i>` : ''}<span>${esc(l)}</span></div>`;
+  }).join('')}</nav>
+${body}
+</div></div>`;
+  }
 
+  function dashboard(m) {
+    const { o, alt, fuel } = m;
+    const O = o.origin || {}, D = o.dest || {};
+    const tlwFrom = m.eOn ? new Date(m.eOn.getTime() - 4 * 60000) : null;
+    const cell = (label, val, cls = '') => `<div class="mp-f"><div class="mp-fl">${esc(label)}</div><div class="mp-fv ${cls}">${esc(val)}</div></div>`;
+    const docTile = (n) => `<div class="mp-tile">${ico('doc', 'mp-ti')}<b>${n}</b><span class="mp-pill">${ico('eye')}${n}</span></div>`;
+    const wxTile = (ports) => {
+      const withWx = ports.filter((p) => p && (p.metar || p.taf));
+      if (!withWx.length) return `<div class="mp-tile">${ico('sun', 'mp-ti')}<span class="mp-pill off">METAR</span></div>`;
+      return `<details class="mp-tile mp-wx"><summary>${ico('sun', 'mp-ti')}<span class="mp-pill">METAR</span></summary>${
+        withWx.map((p) => `<pre>${esc([p.metar, p.taf].filter(Boolean).join('\n'))}</pre>`).join('')}</details>`;
+    };
+    const person = (p) => `<div class="mp-person">${ico('crew', 'mp-pi')}<div><div class="mp-pn">${esc(p.name)}</div><div class="mp-pr">${esc(p.role)} (${esc(p.emp)})</div></div></div>`;
+
+    return chrome(m, 'dashboard', `
   <div class="mp-flight">
     <span class="mp-swap">${ico('swap')}</span>
     <div class="mp-fid">${esc(m.flightId)}</div>
@@ -185,8 +204,85 @@
       </div>
       <div class="mp-btns"><span>FMS INIT</span><span>FDRA</span></div>
     </div>
+  </div>`);
+  }
+
+  // ---------- Nav Log ----------
+  const isProc = (f) => str(f.is_sid_star) === '1' || /^[A-Z]{3,}\d[A-Z]?$/.test(up(f.via_airway)) || up(f.via_airway) === 'APPCH';
+  const fixName = (id) => (id === 'TOC' ? '*T-O-C*' : id === 'TOD' ? '*T-O-D*' : id);
+  const showFl = (f) => up(f.stage) === 'CRZ' || ['TOC', 'TOD'].includes(up(f.ident));
+  const mach = (f) => { const v = num(f.mach); return showFl(f) && v ? `M.${Z(Math.round((v < 1 ? v * 1000 : v)), 3)}` : '-'; };
+
+  function navRows(m, ofp) {
+    const { o } = m;
+    const W = o.W;
+    const off = m.eOff;
+    const rows = [{ id: up(o.origin?.icao), tcum: 0, fob: W(o.fuel.plan_takeoff), fl: '-', origin: true, fir: '' }];
+    o.navlog.forEach((f) => {
+      const id = up(f.ident);
+      rows.push({
+        id, tcum: secs(f.time_total), fob: W(f.fuel_plan_onboard), fl: showFl(f) ? `FL${Z(C.flOf(f.altitude_feet), 3)}` : '-',
+        toc: id === 'TOC', tod: id === 'TOD', fir: up(f.fir),
+        leg: { via: isProc(f) ? '' : up(f.via_airway) || 'DCT', dist: Math.round(num(f.distance)), time: secs(f.time_leg), fuel: Math.round(W(f.fuel_leg) / 100) * 100, mach: mach(f) },
+      });
+    });
+    rows.forEach((r) => { r.eta = addSec(off, r.tcum); });
+    return rows;
+  }
+
+  function navlog(m, ofp) {
+    const { o } = m;
+    const rows = navRows(m, ofp);
+    const O = o.origin || {}, D = o.dest || {};
+    const hh = (d) => (d ? `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}` : '--:--');
+    const box = (k, ph, w) => `<input class="mp-in ${w}" data-k="nl:${k}" placeholder="${ph}" maxlength="${ph.length + 1}" autocomplete="off" spellcheck="false">`;
+    const leg = (l) => `
+      <div class="mp-leg">
+        <span class="mp-hex">${esc(l.via)}</span>
+        <span class="mp-legd">${l.dist}<sup>NM</sup> | ${esc(hm(l.time))} | ${l.fuel}<sup>lb</sup> | ${esc(l.mach)}</span>
+      </div>`;
+    const body = rows.map((r, i) => {
+      const next = rows[i + 1];
+      const firCross = r.fir && i > 1 && rows[i - 1].fir && rows[i - 1].fir !== r.fir;
+      const tags = (r.toc || r.tod) ? `<span class="mp-bub">${ico('chat')}</span><span class="mp-tag">${r.toc ? 'TOC' : 'TOD'}</span>` : '';
+      return `${firCross ? `<div class="mp-fir"><span>FIR</span></div>` : ''}
+      <div class="mp-fix">
+        <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
+        <div class="mp-nlrow">
+          <span>${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span>${box(`${i}:ata`, 'hhmm', 'w4')}</span>
+          <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span>${box(`${i}:armg`, 'NNN.N', 'w5')}</span>
+          <span>${esc(r.fl)}</span><span>${box(`${i}:afl`, 'NNN', 'w3')}</span>
+        </div>
+      </div>${next ? leg(next.leg) : ''}`;
+    }).join('');
+
+    return chrome(m, 'navlog', `
+  <div class="mp-nlhead">
+    <div class="mp-nltitle">Nav Log</div>
+    <div class="mp-nlsel"><b>${esc(O.icao)}</b><i class="mp-seg"></i><b>${esc(D.icao)}</b><span class="mp-grow"></span>${ico('chev')}</div>
   </div>
-</div></div>`;
+  <div class="mp-nlcols"><span>RETA</span><span>ETA</span><span>ATA</span><span>TCUM</span><span>PRMG<sup>klb</sup></span><span>ARMG<sup>klb</sup></span><span>PFL</span><span>AFL</span></div>
+  <div class="mp-nlwrap">
+    <div class="mp-nllist">${body}</div>
+    <div class="mp-nlside">
+      <span class="mp-sbtn">${ico('expand')}</span>
+      <span class="mp-grow"></span>
+      <span class="mp-sbtn" data-mp-scroll="-1" role="button" tabindex="0">${ico('up')}</span>
+      <span class="mp-sbtn" data-mp-scroll="1" role="button" tabindex="0">${ico('down')}</span>
+    </div>
+  </div>`);
+  }
+
+  function navText(m, ofp) {
+    const rows = navRows(m, ofp);
+    const hh = (d) => (d ? `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}` : '--:--');
+    const out = ['MISSION+ NAV LOG', `${C.L('FIX', 10)}${C.L('RETA', 7)}${C.L('ETA', 7)}${C.L('ATA', 6)}${C.L('TCUM', 7)}${C.L('PRMG', 7)}${C.L('ARMG', 7)}${C.L('PFL', 7)}AFL`];
+    rows.forEach((r, i) => {
+      out.push(`${C.L(fixName(r.id), 10)}${C.L(hh(r.eta), 7)}${C.L(hh(r.eta), 7)}${C.L('____', 6)}${C.L(hm(r.tcum), 7)}${C.L((r.fob / 1000).toFixed(1), 7)}${C.L('_____', 7)}${C.L(r.fl, 7)}___`);
+      const n = rows[i + 1];
+      if (n) out.push(`   ${C.L(n.leg.via || '(PROC)', 8)}${n.leg.dist}NM | ${hm(n.leg.time)} | ${n.leg.fuel}LB | ${n.leg.mach}`);
+    });
+    return out.join('\n');
   }
 
   function text(m) {
@@ -214,11 +310,14 @@
   const def = {
     id: 'missionplus',
     name: 'Mission+ (iPad EFB)',
-    description: 'Mission+ iPad EFB layout: Dashboard with route timeline, fuel/weights, NOTAM and weather tiles, release, crew and aircraft status.',
+    description: 'Mission+ iPad EFB layout: Dashboard (route timeline, fuel/weights, NOTAM/WX tiles, release, crew, aircraft) and Nav Log (RETA/ETA/ATA, fuel remaining, FLs, leg data).',
     device: 'ipad',
     format(ofp, settings = {}) {
       const m = prep(ofp, settings);
-      return [{ id: 'dashboard', title: 'Dashboard', html: html(m), text: text(m) }];
+      return [
+        { id: 'dashboard', title: 'Dashboard', html: dashboard(m), text: text(m) },
+        { id: 'navlog', title: 'Nav Log', html: navlog(m, ofp), text: navText(m, ofp), newPage: true },
+      ];
     },
   };
 

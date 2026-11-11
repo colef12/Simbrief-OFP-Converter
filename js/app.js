@@ -17,6 +17,8 @@
 
   let lastOfp = null;
   let lastSections = [];
+  let devicePage = null; // active page id for device formats (e.g. Mission+)
+  const INPUTS_KEY = 'ofp.deviceInputs';
 
   // ---------- storage ----------
   const load = (k, d) => { try { return JSON.parse(localStorage.getItem(k)) ?? d; } catch { return d; } };
@@ -110,11 +112,57 @@
       const a = document.createElement('a');
       a.href = `#sec-${s.id}`;
       a.textContent = s.title;
+      a.dataset.page = s.id;
       return a;
     }));
+    if (currentFormat().device) {
+      if (!lastSections.some((s) => s.id === devicePage)) devicePage = lastSections[0]?.id;
+      showPage(devicePage);
+      restoreInputs();
+    }
     els.empty.hidden = true;
     els.output.hidden = false;
   }
+
+  // ---------- device formats: one page at a time, tappable tabs, saved entry boxes ----------
+  function showPage(id) {
+    devicePage = id;
+    els.paper.querySelectorAll(':scope > section').forEach((sec) => { sec.hidden = sec.id !== `sec-${id}`; });
+    els.tabs.querySelectorAll('a').forEach((a) => a.classList.toggle('on', a.dataset.page === id));
+  }
+  const inputScope = () => `${lastOfp?.params?.request_id || ''}:${currentFormat().id}`;
+  function restoreInputs() {
+    const all = load(INPUTS_KEY, {})[inputScope()] || {};
+    els.paper.querySelectorAll('input[data-k]').forEach((el) => { el.value = all[el.dataset.k] || ''; });
+  }
+  els.paper.addEventListener('input', (e) => {
+    const el = e.target.closest('input[data-k]');
+    if (!el) return;
+    const store = load(INPUTS_KEY, {});
+    const scope = inputScope();
+    store[scope] = { ...(store[scope] || {}), [el.dataset.k]: el.value.toUpperCase() };
+    if (!el.value) delete store[scope][el.dataset.k];
+    save(INPUTS_KEY, store);
+  });
+  function deviceAction(e) {
+    const page = e.target.closest('[data-mp-page]');
+    if (page) { showPage(page.dataset.mpPage); els.paper.closest('.pane-body')?.scrollTo({ top: 0 }); return true; }
+    const sc = e.target.closest('[data-mp-scroll]');
+    if (sc) {
+      const list = sc.closest('section').querySelector('.mp-nllist');
+      list?.scrollBy({ top: Number(sc.dataset.mpScroll) * list.clientHeight * 0.8, behavior: 'smooth' });
+      return true;
+    }
+    return false;
+  }
+  els.paper.addEventListener('click', deviceAction);
+  els.paper.addEventListener('keydown', (e) => { if ((e.key === 'Enter' || e.key === ' ') && deviceAction(e)) e.preventDefault(); });
+  els.tabs.addEventListener('click', (e) => {
+    const a = e.target.closest('a[data-page]');
+    if (!a || !currentFormat().device) return;
+    e.preventDefault();
+    showPage(a.dataset.page);
+  });
 
   // SimBrief's own OFP (text.plan_html), isolated in a sandboxed iframe
   const SRC_CSS = '<style>body{margin:0;padding:24px 28px;background:#fbfaf5;color:#1b1b1b;font:13px/1.35 "Courier New",monospace}'
