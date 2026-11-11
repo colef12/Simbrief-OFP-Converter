@@ -11,6 +11,7 @@
     form: $('fetchForm'), id: $('sbId'), format: $('formatSelect'), formatDesc: $('formatDesc'), fetchBtn: $('fetchBtn'), file: $('fileInput'), demo: $('demoBtn'),
     settingsBtn: $('settingsBtn'), settings: $('settings'), settingsForm: $('settingsForm'), settingsClose: $('settingsClose'),
     status: $('status'), empty: $('empty'), output: $('output'), tabs: $('tabs'), paper: $('paper'),
+    srcEmpty: $('srcEmpty'), srcFrame: $('srcFrame'),
     copy: $('copyBtn'), txt: $('txtBtn'), print: $('printBtn'),
   };
 
@@ -108,8 +109,20 @@
     els.output.hidden = false;
   }
 
+  // SimBrief's own OFP (text.plan_html), isolated in a sandboxed iframe
+  const SRC_CSS = '<style>body{margin:0;padding:24px 28px;background:#fbfaf5;color:#1b1b1b;font:13px/1.35 "Courier New",monospace}'
+    + 'pre{font:inherit;white-space:pre;margin:0}img{max-width:100%}</style>';
+  function renderSource(ofp) {
+    const html = ofp?.text?.plan_html;
+    els.srcEmpty.textContent = 'No SimBrief OFP text in this plan (text.plan_html missing). Fetch from SimBrief to see it.';
+    els.srcEmpty.hidden = !!html;
+    els.srcFrame.hidden = !html;
+    els.srcFrame.srcdoc = html ? SRC_CSS + html : '';
+  }
+
   function show(ofp, label) {
     lastOfp = ofp;
+    renderSource(ofp);
     render();
     const g = ofp.general || {};
     const o = ofp.origin?.icao_code || '';
