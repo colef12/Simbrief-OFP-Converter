@@ -13,7 +13,7 @@ if (!fs.existsSync(formatFile)) {
   process.exit(1);
 }
 const fmt = require(formatFile);
-const defaults = { psa: 'btv-phl.json', rpa: 'iad-phl.json' };
+const defaults = { psa: 'btv-phl.json', rpa: 'iad-phl.json', missionplus: 'btv-phl.json' };
 const file = args[0] || path.join(__dirname, 'fixtures', defaults[formatId] || 'btv-phl.json');
 const ofp = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
 const settings = {

@@ -19,6 +19,7 @@ No login or password is needed. SimBrief's public API returns your most recently
 |---|---|---|
 | `psa` | PSA Airlines CRJ dispatch release (ACARS-printed OFP) | ✅ Available |
 | `rpa` | Republic Airways E-Jet flight brief (Navtech-style release) | ✅ Available |
+| `missionplus` | Mission+ iPad EFB — Dashboard page | ✅ Available (more pages planned) |
 | … | More niche formats | Planned |
 
 ### PSA Airlines
@@ -93,3 +94,7 @@ node test/render.js path/to/simbrief.json --format rpa
 ```
 
 For flight simulation use only. Not for real-world navigation or dispatch.
+
+### Mission+ (iPad EFB)
+
+Renders as an iPad screen instead of a printout. **Dashboard** page: flight ID (callsign/fleet #), ops type, route timeline (origin, destination, primary alternate) with STD/STA in Z and local, scheduled block, flight time, time to alternate, landing window, T/O and landing weights, block fuel, fuel at TOC, min T/O fuel, plan landing fuel, min landing fuel at destination (reserve + alternate), available delay fuel, NOTAM counts (origin / enroute + alternate / destination), tap-to-expand METAR/TAF tiles, release, crew and aircraft status. Copy / .txt give a plain-text summary.

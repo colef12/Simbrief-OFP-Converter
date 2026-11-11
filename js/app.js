@@ -82,9 +82,16 @@
       status(e.message, 'error');
       return;
     }
+    els.paper.classList.toggle('device', !!currentFormat().device);
     els.paper.replaceChildren(...lastSections.map((s) => {
       const sec = document.createElement('section');
       if (s.newPage) sec.className = 'new-page';
+      if (s.html) {
+        // HTML view (device formats); the format escapes all OFP values
+        sec.id = `sec-${s.id}`;
+        sec.innerHTML = s.html;
+        return sec;
+      }
       const pre = document.createElement('pre');
       pre.id = `sec-${s.id}`;
       // \u0002…\u0003 marks bold runs
@@ -179,7 +186,7 @@
 
   els.demo.addEventListener('click', async () => {
     try {
-      const demo = { psa: 'btv-phl', rpa: 'iad-phl' }[currentFormat().id] || 'btv-phl';
+      const demo = { psa: 'btv-phl', rpa: 'iad-phl', missionplus: 'btv-phl' }[currentFormat().id] || 'btv-phl';
       const res = await fetch(`test/fixtures/${demo}.json`);
       show(await res.json(), 'Demo');
     } catch (err) {
