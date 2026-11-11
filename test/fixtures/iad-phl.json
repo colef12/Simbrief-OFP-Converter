@@ -80,7 +80,9 @@
     "date_expire": "2026-12-01T12:00:00Z",
     "date_expire_is_estimated": false
    }
-  ]
+  ],
+  "pos_lat": "38.9445",
+  "pos_long": "-77.4558"
  },
  "destination": {
   "icao_code": "KPHL",
@@ -109,7 +111,9 @@
     "date_expire": "2026-11-30T23:59:00Z",
     "date_expire_is_estimated": false
    }
-  ]
+  ],
+  "pos_lat": "39.8719",
+  "pos_long": "-75.2411"
  },
  "alternate": [],
  "navlog": [

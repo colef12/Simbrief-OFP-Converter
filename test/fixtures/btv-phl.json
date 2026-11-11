@@ -85,7 +85,10 @@
     "date_expire_is_estimated": true,
     "notam_is_obstacle": false
    }
-  ]
+  ],
+  "pos_lat": "44.4719",
+  "pos_long": "-73.1533",
+  "elevation": "335"
  },
  "destination": {
   "icao_code": "KPHL",
@@ -136,7 +139,10 @@
     "date_expire_is_estimated": false,
     "notam_is_obstacle": false
    }
-  ]
+  ],
+  "pos_lat": "39.8719",
+  "pos_long": "-75.2411",
+  "elevation": "36"
  },
  "alternate": [],
  "navlog": [

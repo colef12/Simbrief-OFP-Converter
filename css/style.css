@@ -208,6 +208,12 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nltitle { font-size: 1.45em; }
 .mp-nlsel { flex: 1; display: flex; align-items: center; gap: .9em; padding: .7em 1.1em; border: 2px solid #d9e1f2; border-radius: 3px; font-size: 1.05em; }
 .mp-nlsel .mp-ico { width: 1.6em; height: 1.6em; }
+.mp-gpsbar { display: flex; align-items: center; gap: .6em; padding: 0 1.4em .6em; font-size: .85em; color: var(--mp-dim); }
+.mp-gpslbl { font-weight: 600; }
+.mp-gpscs { width: 8.5em; padding: .3em .5em; background: #0e1424; color: #fff; border: 1.5px solid var(--mp-line); border-radius: 3px; font: 600 1em "SF Mono", Menlo, Consolas, monospace; text-transform: uppercase; }
+.mp-gpsbtn { padding: .35em .8em; border-radius: 999px; border: 1.5px solid var(--mp-line); background: transparent; color: var(--mp-dim); font: 600 .95em "IBM Plex Sans", sans-serif; cursor: pointer; }
+.mp-gpsbtn.on { border-color: #8fe388; color: #8fe388; }
+.mp-gpsst.ok { color: #8fe388; } .mp-gpsst.warn { color: #f2a53d; }
 .mp-seg { position: relative; flex: 0 1 40%; height: 3px; background: #d9e1f2; border-radius: 2px; }
 .mp-seg::before, .mp-seg::after { content: ""; position: absolute; top: 50%; width: .8em; height: .8em; border-radius: 50%; background: #fff; transform: translateY(-50%); }
 .mp-seg::before { left: -.2em; } .mp-seg::after { right: -.2em; }

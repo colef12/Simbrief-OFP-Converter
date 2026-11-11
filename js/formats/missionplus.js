@@ -217,12 +217,12 @@ ${body}
     const { o } = m;
     const W = o.W;
     const off = m.eOff;
-    const rows = [{ id: up(o.origin?.icao), tcum: 0, fob: W(o.fuel.plan_takeoff), fl: '-', origin: true, fir: '' }];
+    const rows = [{ id: up(o.origin?.icao), tcum: 0, fob: W(o.fuel.plan_takeoff), fl: '-', origin: true, fir: '', lat: num(o.origin?.raw?.pos_lat), lon: num(o.origin?.raw?.pos_long) }];
     o.navlog.forEach((f) => {
       const id = up(f.ident);
       rows.push({
         id, tcum: secs(f.time_total), fob: W(f.fuel_plan_onboard), fl: showFl(f) ? `FL${Z(C.flOf(f.altitude_feet), 3)}` : '-',
-        toc: id === 'TOC', tod: id === 'TOD', fir: up(f.fir),
+        toc: id === 'TOC', tod: id === 'TOD', fir: up(f.fir), lat: num(f.pos_lat), lon: num(f.pos_long),
         leg: { via: isProc(f) ? '' : up(f.via_airway) || 'DCT', dist: Math.round(num(f.distance)), time: secs(f.time_leg), fuel: Math.round(W(f.fuel_leg) / 100) * 100, mach: mach(f) },
       });
     });
@@ -248,7 +248,7 @@ ${body}
       return `${firCross ? `<div class="mp-fir"><span>FIR</span></div>` : ''}
       <div class="mp-fix">
         <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
-        <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}" data-prmg="${(r.fob / 1000).toFixed(1)}">
+        <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}" data-prmg="${(r.fob / 1000).toFixed(1)}" data-lat="${r.lat || ''}" data-lon="${r.lon || ''}">
           <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span class="mp-ent">${box(`${i}:ata`, 'hhmm', 'w4')}<em class="mp-dv" hidden></em></span>
           <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span class="mp-ent">${box(`${i}:armg`, 'NNN.N', 'w5')}<em class="mp-dv" hidden></em></span>
           <span>${esc(r.fl)}</span><span class="mp-ent">${box(`${i}:afl`, 'NNN', 'w3')}</span>
@@ -260,6 +260,12 @@ ${body}
   <div class="mp-nlhead">
     <div class="mp-nltitle">Nav Log</div>
     <div class="mp-nlsel"><b>${esc(O.icao)}</b><i class="mp-seg"></i><b>${esc(D.icao)}</b><span class="mp-grow"></span>${ico('chev')}</div>
+  </div>
+  <div class="mp-gpsbar" data-flight="${esc(o.requestId || `${o.callsign}-${O.icao}-${D.icao}`)}" data-elev="${num(O.elev) || 0}">
+    <span class="mp-gpslbl">Auto ATA</span>
+    <input class="mp-gpscs" value="${esc(o.callsign || '')}" placeholder="CALLSIGN" maxlength="10" spellcheck="false" autocomplete="off" aria-label="VATSIM callsign">
+    <button type="button" class="mp-gpsbtn" data-mp-gps aria-pressed="false">VATSIM OFF</button>
+    <span class="mp-gpsst"></span>
   </div>
   <div class="mp-nlcols"><span>RETA</span><span>ETA</span><span>ATA</span><span>TCUM</span><span>PRMG<sup>klb</sup></span><span>ARMG<sup>klb</sup></span><span>PFL</span><span>AFL</span></div>
   <div class="mp-nlwrap">
@@ -370,7 +376,164 @@ ${body}
       recompute();
       return true;
     };
+
+    // ---- "GPS" ATA from the VATSIM network position feed ----
+    const bar = root.querySelector('.mp-gpsbar');
+    if (bar) wireVatsim(root, bar, rows, recompute);
     recompute();
+  }
+
+  // Keeps which ATAs came from the position feed (green) per flight
+  const GPS_KEY = 'mp.gpsAta';
+  const gpsStore = {
+    all() { try { return JSON.parse(localStorage.getItem(GPS_KEY)) || {}; } catch { return {}; } },
+    get(f) { return this.all()[f] || {}; },
+    set(f, idx, on) {
+      const all = this.all(); const m = all[f] || {};
+      if (on) m[idx] = 1; else delete m[idx];
+      all[f] = m;
+      try { localStorage.setItem(GPS_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
+    },
+  };
+
+  const VATSIM_URL = 'https://data.vatsim.net/v3/vatsim-data.json';
+  const POLL_MS = 15000;
+
+  // Local flat projection in NM around a point (fine for leg-length distances)
+  const toXY = (lat, lon, lat0) => ({ x: lon * 60 * Math.cos((lat0 * Math.PI) / 180), y: lat * 60 });
+
+  function wireVatsim(root, bar, rows, recompute) {
+    const flight = bar.dataset.flight;
+    const elev = Number(bar.dataset.elev) || 0;
+    const btn = bar.querySelector('[data-mp-gps]');
+    const csIn = bar.querySelector('.mp-gpscs');
+    const st = bar.querySelector('.mp-gpsst');
+    const coord = (v) => (v === '' || v == null ? NaN : Number(v));
+    const fixes = rows.map((r) => ({ lat: coord(r.dataset.lat), lon: coord(r.dataset.lon), input: r.querySelector('input[data-k$=":ata"]') }));
+    const ok = (f) => f && Number.isFinite(f.lat) && Number.isFinite(f.lon) && !(f.lat === 0 && f.lon === 0);
+    const ataIdx = (input) => fixes.findIndex((f) => f.input === input);
+
+    // restore green (GPS) marks; a manual edit turns a value back to blue
+    const marks = gpsStore.get(flight);
+    fixes.forEach((f, i) => { if (marks[i] && f.input.value) f.input.dataset.src = 'gps'; });
+    root.addEventListener('input', (e) => {
+      const i = ataIdx(e.target);
+      if (i >= 0 && !e.target.dataset.src) gpsStore.set(flight, i, false);
+    });
+    const fill = (i, when) => {
+      const f = fixes[i];
+      if (!f || f.input.value) return;
+      when = new Date(Math.round(when.getTime() / 60000) * 60000); // nearest minute
+      f.input.value = `${Z(when.getUTCHours(), 2)}:${Z(when.getUTCMinutes(), 2)}`;
+      f.input.dispatchEvent(new Event('input', { bubbles: true })); // saves the value (app.js)
+      f.input.dataset.src = 'gps';
+      gpsStore.set(flight, i, true);
+      recompute();
+    };
+
+    // Progress = distance flown along the planned route (NM from the first fix with a position).
+    // Each sample is matched to the nearest route leg within a short look-ahead window, so
+    // vectors, turn-backs and short legs don't confuse it; crossing times are interpolated.
+    const cum = []; // cumulative route distance at each fix (NaN where position unknown)
+    {
+      let acc = 0, last = null;
+      fixes.forEach((f, i) => {
+        if (!ok(f)) { cum[i] = NaN; return; }
+        if (last) { const A = toXY(last.lat, last.lon, f.lat), B = toXY(f.lat, f.lon, f.lat); acc += Math.hypot(B.x - A.x, B.y - A.y); }
+        cum[i] = acc; last = f;
+      });
+    }
+    const routePos = (p, fromIdx) => {
+      let best = null;
+      const lastIdx = fixes.length - 1;
+      for (let j = Math.max(1, fromIdx); j <= Math.min(lastIdx, fromIdx + 6); j++) {
+        let a = j - 1;
+        while (a >= 0 && !ok(fixes[a])) a--;
+        if (a < 0 || !ok(fixes[j])) continue;
+        const A = toXY(fixes[a].lat, fixes[a].lon, p.lat), B = toXY(fixes[j].lat, fixes[j].lon, p.lat), P = toXY(p.lat, p.lon, p.lat);
+        const dx = B.x - A.x, dy = B.y - A.y, len = Math.hypot(dx, dy) || 1e-6;
+        const t = ((P.x - A.x) * dx + (P.y - A.y) * dy) / len;
+        const tc = Math.min(len, Math.max(0, t));
+        const xtk = Math.hypot(P.x - (A.x + (dx / len) * tc), P.y - (A.y + (dy / len) * tc));
+        if (!best || xtk < best.xtk) best = { s: cum[a] + tc, xtk };
+      }
+      return best && best.xtk <= 30 ? best.s : null;
+    };
+
+    const state = { next: 1, prev: null, lastStamp: '', wasGround: false, started: false };
+    const onSample = (p) => {
+      const airborne = p.gs >= 80 || p.alt > elev + 500;
+      if (!state.started) {
+        state.started = true;
+        state.wasGround = !airborne;
+        if (airborne) { // joined mid-flight: skip fixes already behind, don't backfill
+          const s0 = routePos(p, 1);
+          if (s0 != null) while (state.next < fixes.length && !(cum[state.next] > s0)) state.next++;
+          state.prev = { ...p, s: s0 };
+          return;
+        }
+      } else if (state.wasGround && airborne) { // actual OFF -> airport row ATA
+        const t0 = state.prev ? state.prev.t : p.t;
+        fill(0, new Date((t0.getTime() + p.t.getTime()) / 2));
+        state.wasGround = false;
+      }
+      const s1 = airborne ? routePos(p, state.next) : null;
+      if (s1 != null) {
+        const prevS = state.prev && state.prev.s != null ? state.prev.s : null;
+        while (state.next < fixes.length) {
+          const target = cum[state.next];
+          if (Number.isNaN(target)) { state.next++; continue; }
+          // within 1 NM counts as crossing the fix
+          if (s1 < target - 1) break;
+          let when = p.t;
+          if (prevS != null && prevS < target && s1 > prevS) {
+            const k = Math.min(1, (target - prevS) / (s1 - prevS));
+            when = new Date(state.prev.t.getTime() + k * (p.t.getTime() - state.prev.t.getTime()));
+          }
+          fill(state.next, when);
+          state.next++;
+        }
+      }
+      state.prev = { ...p, s: s1 };
+    };
+
+    let timer = null;
+    const ago = (t) => `${Math.max(0, Math.round((Date.now() - t.getTime()) / 1000))}s ago`;
+    async function poll() {
+      const cs = csIn.value.trim().toUpperCase();
+      if (!cs) { st.textContent = 'enter callsign'; return; }
+      try {
+        const res = await fetch(VATSIM_URL, { cache: 'no-store' });
+        const data = await res.json();
+        const pilot = (data.pilots || []).find((x) => String(x.callsign).toUpperCase() === cs);
+        if (!pilot) { st.textContent = `${cs} not connected`; st.className = 'mp-gpsst warn'; return; }
+        const stamp = pilot.last_updated || data.general?.update_timestamp || '';
+        const p = { lat: Number(pilot.latitude), lon: Number(pilot.longitude), alt: Number(pilot.altitude), gs: Number(pilot.groundspeed), t: new Date(stamp || Date.now()) };
+        if (stamp !== state.lastStamp) { state.lastStamp = stamp; onSample(p); }
+        st.textContent = `${cs} · ${p.gs} kt · FL${Z(Math.round(p.alt / 100), 3)} · ${ago(p.t)}`;
+        st.className = 'mp-gpsst ok';
+      } catch (err) {
+        st.textContent = 'VATSIM feed unreachable';
+        st.className = 'mp-gpsst warn';
+      }
+    }
+    const setOn = (on) => {
+      clearInterval(timer); timer = null;
+      if (window.__mpGpsTimer) clearInterval(window.__mpGpsTimer);
+      btn.setAttribute('aria-pressed', String(on));
+      btn.textContent = on ? 'VATSIM ON' : 'VATSIM OFF';
+      btn.classList.toggle('on', on);
+      try { localStorage.setItem('mp.gpsOn', on ? '1' : ''); localStorage.setItem('mp.gpsCs', csIn.value.trim().toUpperCase()); } catch { /* ignore */ }
+      if (on) { poll(); timer = setInterval(() => { if (!document.body.contains(bar)) { clearInterval(timer); return; } poll(); }, POLL_MS); window.__mpGpsTimer = timer; }
+      else { st.textContent = ''; st.className = 'mp-gpsst'; }
+    };
+    try { const cs = localStorage.getItem('mp.gpsCs'); if (cs && !csIn.value) csIn.value = cs; } catch { /* ignore */ }
+    btn.addEventListener('click', () => setOn(btn.getAttribute('aria-pressed') !== 'true'));
+    csIn.addEventListener('change', () => { if (btn.classList.contains('on')) { Object.assign(state, { next: 1, prev: null, lastStamp: '', started: false }); poll(); } });
+    let wasOn = false;
+    try { wasOn = localStorage.getItem('mp.gpsOn') === '1'; } catch { /* ignore */ }
+    if (wasOn) setOn(true);
+    root.mpGpsSample = onSample; // test hook: feed { lat, lon, alt, gs, t: Date }
   }
 
   function navText(m, ofp) {
