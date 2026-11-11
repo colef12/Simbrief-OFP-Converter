@@ -6,8 +6,8 @@
   <title>SimBrief OFP Converter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Courier+Prime:wght@400;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css?v=4">
   <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 32 32%22%3E%3Crect width=%2232%22 height=%2232%22 rx=%226%22 fill=%22%233fb68b%22/%3E%3Ctext x=%2216%22 y=%2221%22 font-family=%22monospace%22 font-size=%2212%22 font-weight=%22700%22 text-anchor=%22middle%22 fill=%22%23062018%22%3EOFP%3C/text%3E%3C/svg%3E">
 </head>
 <body>
@@ -45,26 +45,37 @@
           <label class="check"><input type="checkbox" name="convertToLbs" checked> Convert kg plans to lbs</label>
           <label>Callsign override<input name="callsign" placeholder="from SimBrief"></label>
           <label>Fleet numbers <small>REG=NUM, one per line</small><textarea name="fleetNumbers" rows="3" placeholder="N603NN=603"></textarea></label>
-          <label>Type designation override <small>TYPE=MODEL</small><textarea name="typeDesignations" rows="2" placeholder="CRJ9=CL600-2D24"></textarea></label>
+          <label>Type designation override <small>TYPE=MODEL</small><textarea name="typeDesignations" rows="2" placeholder="CRJ9=CL600-2D24&#10;E75L=E170-200LR"></textarea></label>
+          <label>Max bags <small>TYPE=COUNT (default 2× seats)</small><textarea name="maxBags" rows="2" placeholder="CRJ9=160&#10;E75L=120"></textarea></label>
         </fieldset>
-        <fieldset data-format="psa">
-          <legend>PSA · Crew &amp; dispatch</legend>
+        <fieldset>
+          <legend>Crew &amp; dispatch</legend>
           <label>Captain employee #<input name="captEmp" inputmode="numeric" placeholder="auto"></label>
           <label>F/O employee #<input name="foEmp" inputmode="numeric" placeholder="auto"></label>
-          <label>Dispatcher phone<input name="dispatcherPhone" placeholder="1-800-…"></label>
-          <label>Dispatch desk<input name="dispatchDesk" placeholder="DX"></label>
+          <label>Dispatch desk<input name="dispatchDesk" placeholder="PSA: DX · RPA: 32"></label>
         </fieldset>
         <fieldset data-format="psa">
           <legend>PSA · Release header</legend>
           <label>ACARS address line<input name="acarsAddress" placeholder="@QU INTXSAA"></label>
           <label>ACARS station<input name="acarsStation" placeholder="DAY75AA"></label>
           <label>Standard route #<input name="routeNumber" placeholder="R00"></label>
+          <label>Dispatcher phone<input name="dispatcherPhone" placeholder="1-800-…"></label>
           <label>BOW ARM <small>REG or TYPE=ARM</small><textarea name="bowArms" rows="3" placeholder="N603NN=871.82&#10;CRJ9=871.82"></textarea></label>
-          <label>Max bags <small>TYPE=COUNT (default 2× seats)</small><textarea name="maxBags" rows="2" placeholder="CRJ9=160"></textarea></label>
         </fieldset>
         <fieldset data-format="psa">
           <legend>PSA · A/C info (MEL placards)</legend>
           <label>One per line: <small>PLACARD DESCRIPTION</small><textarea name="placards" rows="5" placeholder="33-21-1-2B CABIN INTERIOR LIGHTS"></textarea></label>
+        </fieldset>
+        <fieldset data-format="rpa">
+          <legend>RPA · Release</legend>
+          <label>Airline name<input name="airlineName" placeholder="REPUBLIC AIRWAYS"></label>
+          <label>Aircraft line suffix <small>REG or TYPE=TEXT</small><textarea name="acSuffix" rows="2" placeholder="E75L=/SAT/NEW ACARS"></textarea></label>
+          <label>Max ramp weight <small>TYPE=LBS (default MTOW + taxi)</small><textarea name="maxRamp" rows="2" placeholder="E75L=85870"></textarea></label>
+        </fieldset>
+        <fieldset data-format="rpa">
+          <legend>RPA · MEL/NEF &amp; CDL</legend>
+          <label>MEL/NEF <small>ATA | EXP | POS | DESCRIPTION</small><textarea name="melList" rows="3" placeholder="21-31-01 | 12NOV26 | - | PACK 1 INOP"></textarea></label>
+          <label>CDL <small>ATA | EXP | POS | DESCRIPTION</small><textarea name="cdlList" rows="3" placeholder="71-13-01 | ------- | E2 IB | AFT CORE COWL AERO SEAL"></textarea></label>
         </fieldset>
       </div>
       <div class="settings-foot">
@@ -101,9 +112,12 @@
     For flight simulation use only. Not for real-world navigation or dispatch.
   </footer>
 
-  <script src="js/formats/registry.js"></script>
-  <script src="js/formats/psa.js"></script>
-  <!-- Add new formats here: <script src="js/formats/your-format.js"></script> -->
-  <script src="js/app.js"></script>
+  <!-- Bump ?v= on every release so browsers fetch fresh files -->
+  <script src="js/formats/registry.js?v=4"></script>
+  <script src="js/formats/common.js?v=4"></script>
+  <script src="js/formats/psa.js?v=4"></script>
+  <script src="js/formats/rpa.js?v=4"></script>
+  <!-- Add new formats here: <script src="js/formats/your-format.js?v=4"></script> -->
+  <script src="js/app.js?v=4"></script>
 </body>
 </html>

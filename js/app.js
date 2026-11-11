@@ -86,7 +86,15 @@
       if (s.newPage) sec.className = 'new-page';
       const pre = document.createElement('pre');
       pre.id = `sec-${s.id}`;
-      pre.textContent = s.text;
+      // \u0002…\u0003 marks bold runs
+      s.text.split(/(\u0002[^\u0003]*\u0003)/).forEach((part) => {
+        if (!part) return;
+        if (part[0] === '\u0002') {
+          const bEl = document.createElement('b');
+          bEl.textContent = part.slice(1, -1);
+          pre.appendChild(bEl);
+        } else pre.appendChild(document.createTextNode(part));
+      });
       sec.appendChild(pre);
       return sec;
     }));
@@ -158,7 +166,8 @@
 
   els.demo.addEventListener('click', async () => {
     try {
-      const res = await fetch('test/fixtures/btv-phl.json');
+      const demo = { psa: 'btv-phl', rpa: 'iad-phl' }[currentFormat().id] || 'btv-phl';
+      const res = await fetch(`test/fixtures/${demo}.json`);
       show(await res.json(), 'Demo');
     } catch (err) {
       status(`Demo unavailable: ${err.message}`, 'error');
@@ -176,7 +185,7 @@
   els.settingsForm.addEventListener('submit', (e) => e.preventDefault());
 
   // ---------- output actions ----------
-  const fullText = () => lastSections.map((s) => s.text).join('\n\n\f\n');
+  const fullText = () => lastSections.map((s) => s.text.replace(/[\u0002\u0003]/g, '')).join('\n\n\f\n');
   const fileName = () => {
     const g = lastOfp?.general || {};
     return `${currentFormat().id.toUpperCase()}_${g.flight_number || 'OFP'}_${lastOfp?.origin?.iata_code || lastOfp?.origin?.icao_code || ''}_${lastOfp?.destination?.iata_code || lastOfp?.destination?.icao_code || ''}.txt`;

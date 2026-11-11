@@ -13,7 +13,12 @@ if (!fs.existsSync(formatFile)) {
   process.exit(1);
 }
 const fmt = require(formatFile);
-const file = args[0] || path.join(__dirname, 'fixtures', 'btv-phl.json');
+const defaults = { psa: 'btv-phl.json', rpa: 'iad-phl.json' };
+const file = args[0] || path.join(__dirname, 'fixtures', defaults[formatId] || 'btv-phl.json');
 const ofp = JSON.parse(fs.readFileSync(path.resolve(file), 'utf8'));
-const settings = { bowArms: 'N603NN=871.82', maxBags: 'CRJ9=160', placards: '33-21-1-2B CABIN INTERIOR LIGHTS' };
-for (const s of fmt.format(ofp, settings)) console.log(`${s.text}\n`);
+const settings = {
+  bowArms: 'N603NN=871.82', maxBags: 'CRJ9=160\nE75L=120', placards: '33-21-1-2B CABIN INTERIOR LIGHTS',
+  typeDesignations: 'E75L=E170-200LR', acSuffix: 'E75L=/SAT/NEW ACARS', maxRamp: 'E75L=85870', dispatchDesk: '32',
+  cdlList: '71-13-01 | ------- | E2 IB | AFT CORE COWL AERO SEAL',
+};
+for (const s of fmt.format(ofp, settings)) console.log(`${s.text.replace(/[\u0002\u0003]/g, '')}\n`);

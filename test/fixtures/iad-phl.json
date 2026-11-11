@@ -1,0 +1,897 @@
+{
+ "fetch": {
+  "status": "Success"
+ },
+ "params": {
+  "request_id": "100920640",
+  "time_generated": "2026-11-08T11:41:00Z",
+  "units": "lbs"
+ },
+ "general": {
+  "release": "3",
+  "icao_airline": "RPA",
+  "flight_number": "3660",
+  "dx_rmk": [
+   "NONE"
+  ],
+  "cruise_profile": "290IAS - 290",
+  "climb_profile": "250/270/74",
+  "descent_profile": "74/280/250",
+  "costindex": "",
+  "initial_altitude": "11000",
+  "avg_temp_dev": "3",
+  "avg_wind_dir": "299",
+  "avg_wind_spd": "035",
+  "avg_wind_comp": "-20",
+  "route_distance": "161",
+  "route": "WOOLY2 SWANN T356 ODESA DCT"
+ },
+ "origin": {
+  "icao_code": "KIAD",
+  "iata_code": "IAD",
+  "name": "WASHINGTON DULLES INTL",
+  "elevation": "312",
+  "plan_rwy": "30",
+  "metar": "KIAD 081152Z 32005KT 10SM FEW032 FEW250 08/03 A3005 RMK AO2 SLP175 T00830028 10089 20061 53005",
+  "taf": "KIAD 081132Z 0812/0918 20003KT P6SM SCT030\nFM081400 29009G17KT P6SM SKC\nFM082200 21005KT P6SM SKC\nFM091500 31016G27KT P6SM SCT045",
+  "notam": [
+   {
+    "notam_id": "A5689/26",
+    "location_icao": "KIAD",
+    "notam_text": "RWY 01C/19C CLSD",
+    "notam_qcode_subject": "Runway",
+    "date_effective": "2026-10-29T16:43:00Z",
+    "date_expire": "2026-11-23T10:00:00Z",
+    "date_expire_is_estimated": false
+   },
+   {
+    "notam_id": "A5801/26",
+    "location_icao": "KIAD",
+    "notam_text": "TWY W3 BTN APCH END RWY 01C AND TWY W CLSD",
+    "notam_qcode_subject": "Taxiway",
+    "date_effective": "2026-11-05T02:37:00Z",
+    "date_expire": "2026-12-15T23:59:00Z",
+    "date_expire_is_estimated": false
+   },
+   {
+    "notam_id": "A4678/26",
+    "location_icao": "KIAD",
+    "notam_text": "TWY Y AT TWY Y11 LEAD IN LINE JUDGEMENTAL OVERSTEERING IS NO LONGER REQUIRED. AVBL FOR COCKPIT OVER CL TAX",
+    "notam_qcode_subject": "Taxiway",
+    "date_effective": "2026-08-31T17:40:00Z",
+    "date_expire": "2099-12-31T23:59:00Z",
+    "date_expire_is_estimated": true
+   },
+   {
+    "notam_id": "A5798/26",
+    "location_icao": "KIAD",
+    "notam_text": "RWY 01L ALS U/S",
+    "notam_qcode_subject": "Approach light system",
+    "date_effective": "2026-11-08T19:00:00Z",
+    "date_expire": "2026-11-08T21:00:00Z",
+    "date_expire_is_estimated": false
+   },
+   {
+    "notam_id": "A4537/26",
+    "location_icao": "KIAD",
+    "notam_text": "RWY 30 DIST REMAINING SIGNS NOT STD",
+    "notam_qcode_subject": "Runway",
+    "date_effective": "2026-09-01T12:00:00Z",
+    "date_expire": "2026-12-01T12:00:00Z",
+    "date_expire_is_estimated": false
+   }
+  ]
+ },
+ "destination": {
+  "icao_code": "KPHL",
+  "iata_code": "PHL",
+  "name": "PHILADELPHIA INTL",
+  "elevation": "36",
+  "plan_rwy": "27R",
+  "metar": "KPHL 081154Z 28008KT 10SM BKN031 11/04 A2996 RMK AO2 SLP144 T01110044 10111 20083 53010",
+  "taf": "KPHL 081129Z 0812/0918 26012KT P6SM BKN035\nFM081300 28012G19KT P6SM SCT040\nFM081500 28014G23KT P6SM SCT250\nFM082200 25008KT P6SM SKC",
+  "notam": [
+   {
+    "notam_id": "A4298/26",
+    "location_icao": "KPHL",
+    "notam_text": "RWY 27R/09L EDGE LGT U/S",
+    "notam_qcode_subject": "Runway",
+    "date_effective": "2026-10-01T00:00:00Z",
+    "date_expire": "2026-12-31T23:59:00Z",
+    "date_expire_is_estimated": false
+   },
+   {
+    "notam_id": "A5073/26",
+    "location_icao": "KPHL",
+    "notam_text": "RWY 27L TDZ LGT U/S",
+    "notam_qcode_subject": "Runway",
+    "date_effective": "2026-10-20T00:00:00Z",
+    "date_expire": "2026-11-30T23:59:00Z",
+    "date_expire_is_estimated": false
+   }
+  ]
+ },
+ "alternate": [],
+ "navlog": [
+  {
+   "ident": "38566N",
+   "name": "38566N",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "38.9433",
+   "pos_long": "-77.4797",
+   "stage": "CLB",
+   "via_airway": "WOOLY2",
+   "distance": "1",
+   "track_mag": "276",
+   "heading_mag": "272",
+   "altitude_feet": "1500",
+   "ind_airspeed": "250",
+   "true_airspeed": "255",
+   "mach": "0.4",
+   "groundspeed": "220",
+   "time_leg": "00:00:00",
+   "time_total": "00:00:00",
+   "fuel_leg": "107",
+   "fuel_totalused": "107",
+   "fuel_plan_onboard": "6293",
+   "oat": "15",
+   "oat_isa_dev": "0",
+   "wind_dir": "300",
+   "wind_spd": "26",
+   "mora": "1500",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "TOC",
+   "name": "TOC",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.05",
+   "pos_long": "-77.38",
+   "stage": "CLB",
+   "via_airway": "WOOLY2",
+   "distance": "14",
+   "track_mag": "32",
+   "heading_mag": "38",
+   "altitude_feet": "11000",
+   "ind_airspeed": "270",
+   "true_airspeed": "281",
+   "mach": "0.5",
+   "groundspeed": "246",
+   "time_leg": "00:03:00",
+   "time_total": "00:03:00",
+   "fuel_leg": "681",
+   "fuel_totalused": "788",
+   "fuel_plan_onboard": "5612",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "301",
+   "wind_spd": "29",
+   "mora": "2000",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "RAZZA",
+   "name": "RAZZA",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.13",
+   "pos_long": "-77.31",
+   "stage": "CRZ",
+   "via_airway": "WOOLY2",
+   "distance": "6",
+   "track_mag": "32",
+   "heading_mag": "38",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:01:00",
+   "time_total": "00:04:00",
+   "fuel_leg": "80",
+   "fuel_totalused": "868",
+   "fuel_plan_onboard": "5532",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "301",
+   "wind_spd": "32",
+   "mora": "2000",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "301",
+     "wind_spd": "29",
+     "oat": "4"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "302",
+     "wind_spd": "30",
+     "oat": "0"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "301",
+     "wind_spd": "32",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "301",
+     "wind_spd": "37",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "WOOLY",
+   "name": "WOOLY",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.25",
+   "pos_long": "-77.05",
+   "stage": "CRZ",
+   "via_airway": "WOOLY2",
+   "distance": "14",
+   "track_mag": "69",
+   "heading_mag": "74",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:03:00",
+   "time_total": "00:07:00",
+   "fuel_leg": "149",
+   "fuel_totalused": "1017",
+   "fuel_plan_onboard": "5383",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "301",
+   "wind_spd": "33",
+   "mora": "2000",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "303",
+     "wind_spd": "32",
+     "oat": "3"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "302",
+     "wind_spd": "33",
+     "oat": "0"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "301",
+     "wind_spd": "35",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "38",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "SWANN",
+   "name": "SWANN",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.03",
+   "pos_long": "-76.38",
+   "stage": "CRZ",
+   "via_airway": "WOOLY2",
+   "distance": "39",
+   "track_mag": "116",
+   "heading_mag": "118",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:06:00",
+   "time_total": "00:13:00",
+   "fuel_leg": "413",
+   "fuel_totalused": "1430",
+   "fuel_plan_onboard": "4970",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "299",
+   "wind_spd": "36",
+   "mora": "1900",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "302",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "0"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "298",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "299",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "GATBY",
+   "name": "GATBY",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.13",
+   "pos_long": "-76.21",
+   "stage": "CRZ",
+   "via_airway": "T356",
+   "distance": "9",
+   "track_mag": "47",
+   "heading_mag": "53",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:01:00",
+   "time_total": "00:14:00",
+   "fuel_leg": "102",
+   "fuel_totalused": "1532",
+   "fuel_plan_onboard": "4868",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "298",
+   "wind_spd": "37",
+   "mora": "1100",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "KERNO",
+   "name": "KERNO",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.17",
+   "pos_long": "-76.13",
+   "stage": "CRZ",
+   "via_airway": "T356",
+   "distance": "4",
+   "track_mag": "47",
+   "heading_mag": "53",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:01:00",
+   "time_total": "00:15:00",
+   "fuel_leg": "44",
+   "fuel_totalused": "1576",
+   "fuel_plan_onboard": "4824",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "299",
+   "wind_spd": "37",
+   "mora": "1100",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "KEVIA",
+   "name": "KEVIA",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.27",
+   "pos_long": "-75.97",
+   "stage": "CRZ",
+   "via_airway": "T356",
+   "distance": "9",
+   "track_mag": "47",
+   "heading_mag": "54",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:02:00",
+   "time_total": "00:17:00",
+   "fuel_leg": "106",
+   "fuel_totalused": "1682",
+   "fuel_plan_onboard": "4718",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "299",
+   "wind_spd": "37",
+   "mora": "1300",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "ODESA",
+   "name": "ODESA",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.33",
+   "pos_long": "-75.86",
+   "stage": "CRZ",
+   "via_airway": "T356",
+   "distance": "6",
+   "track_mag": "48",
+   "heading_mag": "54",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:01:00",
+   "time_total": "00:18:00",
+   "fuel_leg": "62",
+   "fuel_totalused": "1744",
+   "fuel_plan_onboard": "4656",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "299",
+   "wind_spd": "37",
+   "mora": "1300",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "TOD",
+   "name": "TOD",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.62",
+   "pos_long": "-75.4",
+   "stage": "CRZ",
+   "via_airway": "APPCH",
+   "distance": "29",
+   "track_mag": "62",
+   "heading_mag": "68",
+   "altitude_feet": "11000",
+   "ind_airspeed": "290",
+   "true_airspeed": "341",
+   "mach": "0.53",
+   "groundspeed": "306",
+   "time_leg": "00:05:00",
+   "time_total": "00:23:00",
+   "fuel_leg": "328",
+   "fuel_totalused": "2072",
+   "fuel_plan_onboard": "4328",
+   "oat": "-4",
+   "oat_isa_dev": "3",
+   "wind_dir": "299",
+   "wind_spd": "37",
+   "mora": "1500",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  },
+  {
+   "ident": "KPHL",
+   "name": "KPHL",
+   "type": "apt",
+   "frequency": "",
+   "pos_lat": "39.8719",
+   "pos_long": "-75.2411",
+   "stage": "DSC",
+   "via_airway": "APPCH",
+   "distance": "30",
+   "track_mag": "281",
+   "heading_mag": "217",
+   "altitude_feet": "36",
+   "ind_airspeed": "180",
+   "true_airspeed": "279",
+   "mach": "0.3",
+   "groundspeed": "244",
+   "time_leg": "00:06:00",
+   "time_total": "00:29:00",
+   "fuel_leg": "117",
+   "fuel_totalused": "2189",
+   "fuel_plan_onboard": "4211",
+   "oat": "11",
+   "oat_isa_dev": "0",
+   "wind_dir": "295",
+   "wind_spd": "25",
+   "mora": "1500",
+   "wind_data": [
+    {
+     "altitude": "7000",
+     "wind_dir": "300",
+     "wind_spd": "30",
+     "oat": "2"
+    },
+    {
+     "altitude": "9000",
+     "wind_dir": "299",
+     "wind_spd": "34",
+     "oat": "-1"
+    },
+    {
+     "altitude": "11000",
+     "wind_dir": "299",
+     "wind_spd": "37",
+     "oat": "-4"
+    },
+    {
+     "altitude": "15000",
+     "wind_dir": "302",
+     "wind_spd": "41",
+     "oat": "-13"
+    }
+   ]
+  }
+ ],
+ "aircraft": {
+  "icao_code": "E75L",
+  "iata_code": "E75",
+  "name": "E175",
+  "engines": "CF34-8E5",
+  "reg": "N740YX",
+  "max_passengers": "76",
+  "equip": "M-SDGIRWE3/SB1"
+ },
+ "fuel": {
+  "taxi": "600",
+  "enroute_burn": "2189",
+  "contingency": "656",
+  "alternate_burn": "0",
+  "reserve": "2347",
+  "etops": "0",
+  "extra": "1208",
+  "min_takeoff": "4592",
+  "plan_takeoff": "6400",
+  "plan_ramp": "7000",
+  "plan_landing": "4211",
+  "max_tanks": "20785"
+ },
+ "times": {
+  "est_time_enroute": "00:29:00",
+  "sched_out": "2026-11-08T13:36:00Z",
+  "sched_in": "2026-11-08T14:49:00Z",
+  "est_out": "2026-11-08T13:36:00Z",
+  "est_in": "2026-11-08T14:35:00Z",
+  "taxi_out": "00:20:00",
+  "taxi_in": "00:10:00",
+  "reserve_time": "00:45:00",
+  "contfuel_time": "00:10:00",
+  "extrafuel_time": "00:18:00",
+  "etopsfuel_time": "00:00:00"
+ },
+ "weights": {
+  "oew": "50374",
+  "pax_count": "75",
+  "bag_count": "75",
+  "payload": "17850",
+  "est_zfw": "68224",
+  "max_zfw": "69886",
+  "est_tow": "74624",
+  "max_tow": "77146",
+  "max_tow_struct": "85517",
+  "est_ldw": "72435",
+  "max_ldw": "74957",
+  "est_ramp": "75224"
+ },
+ "crew": {
+  "cpt": "MORGAN HAYES",
+  "fo": "DEVON GRANT",
+  "dx": "SAM DISPATCHER",
+  "fa": [
+   "TARA HOLLOWAY",
+   "MARIA LOPEZ"
+  ]
+ },
+ "atc": {
+  "callsign": "RPA3660",
+  "fir_orig": "KZDC",
+  "fir_dest": "KZNY",
+  "flightplan_text": "(FPL-RPA3660-IS\n-E75L/M-SDGIRWE3/SB1\n-KIAD1336\n-N0341A110 WOOLY2 SWANN T356 ODESA DCT\n-KPHL0029\n-PBN/B1C1D1S2T1 SUR/260B CANMANDATE DOF/261108 REG/N740YX\n CODE/A9F4C6)"
+ },
+ "weather": {},
+ "sigmets": [],
+ "tlr": {
+  "takeoff": {
+   "conditions": {
+    "airport_icao": "KIAD",
+    "planned_runway": "30",
+    "planned_weight": "74624",
+    "wind_direction": "0",
+    "wind_speed": "0",
+    "temperature": "10",
+    "altimeter": "30.06"
+   },
+   "runway": [
+    {
+     "identifier": "01L",
+     "length": "9400",
+     "max_weight": "77146",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    },
+    {
+     "identifier": "01R",
+     "length": "11500",
+     "max_weight": "77146",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    },
+    {
+     "identifier": "12",
+     "length": "10501",
+     "max_weight": "77146",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    },
+    {
+     "identifier": "19L",
+     "length": "11500",
+     "max_weight": "77146",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    },
+    {
+     "identifier": "19R",
+     "length": "9400",
+     "max_weight": "77146",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    },
+    {
+     "identifier": "30",
+     "length": "10501",
+     "max_weight": "90270",
+     "flap_setting": "2",
+     "speeds_v1": "133",
+     "speeds_vr": "138",
+     "speeds_v2": "142"
+    }
+   ]
+  },
+  "landing": {
+   "conditions": {
+    "airport_icao": "KPHL",
+    "planned_runway": "27R",
+    "planned_weight": "72435",
+    "flap_setting": "6",
+    "wind_direction": "0",
+    "wind_speed": "0",
+    "temperature": "13",
+    "altimeter": "29.96"
+   },
+   "runway": [
+    {
+     "identifier": "09L",
+     "length": "9500",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    },
+    {
+     "identifier": "09R",
+     "length": "12000",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    },
+    {
+     "identifier": "17",
+     "length": "6500",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    },
+    {
+     "identifier": "27L",
+     "length": "9912",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    },
+    {
+     "identifier": "27R",
+     "length": "8864",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    },
+    {
+     "identifier": "35",
+     "length": "6500",
+     "max_weight_dry": "90380",
+     "max_weight_wet": "90380"
+    }
+   ]
+  }
+ }
+}

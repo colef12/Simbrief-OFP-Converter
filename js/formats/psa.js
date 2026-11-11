@@ -455,7 +455,7 @@
       const pr = rwys.find((r) => up(r.identifier) === up(c.planned_runway)) || rwys[0] || {};
       const mfptw = W(o.wts.max_ldw) + W(o.fuel.enroute_burn);
       lines.push(L(o.origin?.code, 4) + L(up(c.planned_runway), 5) + L(num(c.temperature).toFixed(1), 5) +
-        L(windFmt(c.wind_direction, c.wind_speed, 3), 7) + L(str(c.altimeter), 6) + L(h(pr.max_weight), 6) +
+        L(`${Z(num(c.wind_direction), 3)}M${Z(num(c.wind_speed), 2)}`, 7) + L(str(c.altimeter), 6) + L(h(pr.max_weight), 6) +
         L(str(pr.flap_setting), 4) + L(str(pr.speeds_v1), 6) + L(h(c.planned_weight), 5) + mfptw);
       lines.push('RMKS NONE');
       lines.push('----------------------- ACARS RUNWAYS -----------------------');
@@ -484,7 +484,7 @@
       const rwys = asArray(ld.runway);
       const pr = rwys.find((r) => up(r.identifier) === up(c.planned_runway)) || rwys[0] || {};
       lines.push(L(o.dest?.code, 4) + L(up(c.planned_runway), 5) + L(num(c.temperature).toFixed(1), 5) +
-        L(windFmt(c.wind_direction, c.wind_speed, 3), 7) + L(str(c.altimeter), 6) + L(h(pr.max_weight_dry), 6) +
+        L(`${Z(num(c.wind_direction), 3)}M${Z(num(c.wind_speed), 2)}`, 7) + L(str(c.altimeter), 6) + L(h(pr.max_weight_dry), 6) +
         L(up(c.flap_setting), 4) + h(c.planned_weight));
       lines.push('RMKS NONE');
       lines.push('----------------------- ACARS RUNWAYS -----------------------');

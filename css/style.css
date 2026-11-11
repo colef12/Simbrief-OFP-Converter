@@ -85,6 +85,7 @@ main { max-width: 900px; margin: 0 auto; padding: 24px 16px 60px; }
   background-image: repeating-linear-gradient(to bottom, transparent 0, transparent 31px, rgba(0,0,0,.025) 31px, rgba(0,0,0,.025) 32px);
 }
 .paper section + section { border-top: 1px dashed #c9c5b8; margin-top: 26px; padding-top: 26px; }
+.paper pre b { font-weight: 700; }
 .paper pre {
   margin: 0; font: 14px/1.35 "Courier Prime", "Courier New", monospace; white-space: pre; scroll-margin-top: 90px;
 }
