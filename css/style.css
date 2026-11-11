@@ -241,5 +241,10 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
   .mp-nlside { display: none; }
 }
 .paper.device section + section { border: 0; margin: 0; padding: 0; }
-.mp-reta.rev { color: #5ee3c4; }
+.mp-reta.rev { color: #8fe388; }
+.mp-ent { display: flex; flex-direction: column; align-items: flex-start; gap: .25em; }
+.mp-in.set:not(:focus) { border-color: transparent; background: transparent; color: #5aa9ff; padding-left: 0; }
+.mp-in.set.gps:not(:focus) { color: #8fe388; }
+.mp-dv { font: 600 .72em/1 "IBM Plex Sans", sans-serif; font-style: normal; padding: .2em .6em; border-radius: 999px; border: 1.5px solid #8fe388; color: #8fe388; }
+.mp-dv.late { border-color: #f2a53d; color: #f2a53d; }
 .mp-in.bad { border-color: #f0776c; }

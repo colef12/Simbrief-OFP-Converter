@@ -117,7 +117,7 @@
     <span class="mp-hbtn">${ico('menu')}</span>
     <div class="mp-hp"><div>${esc(O.icao)}</div><small>ETD ${esc(zt(m.eOut))}</small></div>
     <span class="mp-hbtn mp-sq">${ico('route')}</span>
-    <div class="mp-hp mp-sq r"><div>${esc(D.icao)}</div><small>ETA ${esc(zt(m.eIn))}</small></div>
+    <div class="mp-hp mp-sq r"><div>${esc(D.icao)}</div><small class="mp-hreta" data-in="${m.eIn ? m.eIn.getTime() : ''}">RETA ${esc(zt(m.eIn))}</small></div>
     <span class="mp-grow"></span>
     <span class="mp-hbtn mp-badge-wrap">${ico('bell')}<i class="mp-badge">99+</i></span>
     <span class="mp-hbtn">${ico('mark')}</span>
@@ -248,10 +248,10 @@ ${body}
       return `${firCross ? `<div class="mp-fir"><span>FIR</span></div>` : ''}
       <div class="mp-fix">
         <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
-        <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}">
-          <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span>${box(`${i}:ata`, 'hhmm', 'w4')}</span>
-          <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span>${box(`${i}:armg`, 'NNN.N', 'w5')}</span>
-          <span>${esc(r.fl)}</span><span>${box(`${i}:afl`, 'NNN', 'w3')}</span>
+        <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}" data-prmg="${(r.fob / 1000).toFixed(1)}">
+          <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span class="mp-ent">${box(`${i}:ata`, 'hhmm', 'w4')}<em class="mp-dv" hidden></em></span>
+          <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span class="mp-ent">${box(`${i}:armg`, 'NNN.N', 'w5')}<em class="mp-dv" hidden></em></span>
+          <span>${esc(r.fl)}</span><span class="mp-ent">${box(`${i}:afl`, 'NNN', 'w3')}</span>
         </div>
       </div>${next ? leg(next.leg) : ''}`;
     }).join('');
@@ -273,40 +273,103 @@ ${body}
   </div>`);
   }
 
-  // Live behaviour after render: RETA = latest ATA entered (the airport row's ATA is the
-  // actual OFF time) + planned time from that fix. Rows before the latest ATA keep their own.
+  // Live behaviour after render (matches the real app):
+  // - ATA: typed = manual (blue); ATA filled by a position source (data-src="gps") = green.
+  //   Pill under it = ATA − ETA (green when early/on time, amber when late).
+  // - ARMG: always manual (blue). Pill = ARMG − PRMG in klb (green at/above plan, amber below).
+  // - AFL: manual (blue), no pill.
+  // - RETA at a fix = latest ATA at an EARLIER fix (airport row ATA = actual OFF) + planned
+  //   time from that fix; a fix's own ATA does not change its own RETA. Revised RETA = green.
+  // - Header destination RETA shifts block-in by the destination row's RETA − ETA.
   function enhance(root) {
     const list = root.querySelector('.mp-nllist');
     if (!list || list.dataset.wired) return;
     list.dataset.wired = '1';
     const rows = [...list.querySelectorAll('.mp-nlrow')];
     const hhmmOf = (d) => `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}`;
-    // "hhmm" -> Date on the day closest to the fix's planned ETA (handles midnight crossings)
+    const sgnHm = (min) => `${min < 0 ? '-' : '+'}${Z(Math.floor(Math.abs(min) / 60), 2)}:${Z(Math.abs(min) % 60, 2)}`;
+    // "hhmm" or "hh:mm" -> Date on the day closest to the fix's planned ETA (handles midnight)
     const parse = (v, planned) => {
-      const mt = /^([01]\d|2[0-3])([0-5]\d)$/.exec(String(v).trim());
-      if (!mt || !planned) return mt ? null : undefined;
+      const mt = /^([01]\d|2[0-3]):?([0-5]\d)$/.exec(String(v).trim());
+      if (!mt) return undefined;
+      if (!planned) return null;
       const d = new Date(planned);
       d.setUTCHours(+mt[1], +mt[2], 0, 0);
       const diff = d - planned;
       if (diff > 12 * 3600e3) d.setTime(d - 86400e3); else if (diff < -12 * 3600e3) d.setTime(+d + 86400e3);
       return d;
     };
+    const parseFuel = (v) => (/^\d{1,3}(\.\d)?$/.test(String(v).trim()) ? Number(v) : undefined);
+    const pill = (el, txt, tone) => {
+      if (!el) return;
+      el.hidden = txt == null;
+      el.textContent = txt ?? '';
+      el.className = `mp-dv ${tone || ''}`;
+    };
+    const mark = (input, state) => {
+      // state: '' (empty), 'bad', 'man', 'gps'; filled values drop the box look unless focused
+      input.classList.toggle('bad', state === 'bad');
+      input.classList.toggle('set', state === 'man' || state === 'gps');
+      input.classList.toggle('gps', state === 'gps');
+    };
+    const headers = [...root.querySelectorAll('.mp-hreta')];
     const recompute = () => {
-      let base = null; // { time, tcum }
-      rows.forEach((row) => {
-        const input = row.querySelector('input[data-k$=":ata"]');
+      let base = null; // latest ATA at an earlier fix: { time, tcum }
+      let destShift = 0;
+      rows.forEach((row, idx) => {
         const planned = Number(row.dataset.eta) || null;
         const tcum = Number(row.dataset.tcum) || 0;
-        const ata = input.value ? parse(input.value, planned) : null;
-        input.classList.toggle('bad', ata === undefined);
-        if (ata) base = { time: ata.getTime(), tcum };
+        // RETA from earlier ATAs only
         const cell = row.querySelector('.mp-reta');
         const reta = base ? new Date(base.time + (tcum - base.tcum) * 1000) : (planned ? new Date(planned) : null);
         cell.textContent = reta ? hhmmOf(reta) : '--:--';
-        cell.classList.toggle('rev', !!base && reta.getTime() !== planned);
+        cell.classList.toggle('rev', !!base && !!reta && reta.getTime() !== planned);
+        if (idx === rows.length - 1 && reta && planned) destShift = reta.getTime() - planned;
+        // ATA
+        const ataIn = row.querySelector('input[data-k$=":ata"]');
+        const ata = ataIn.value ? parse(ataIn.value, planned) : null;
+        mark(ataIn, !ataIn.value ? '' : ata === undefined ? 'bad' : ataIn.dataset.src === 'gps' ? 'gps' : 'man');
+        const ataPill = ataIn.parentElement.querySelector('.mp-dv');
+        if (ata && planned) {
+          const dm = Math.round((ata.getTime() - planned) / 60000);
+          pill(ataPill, sgnHm(dm), dm > 0 ? 'late' : 'ok');
+        } else pill(ataPill, null);
+        if (ata) base = { time: ata.getTime(), tcum };
+        // ARMG vs PRMG
+        const fuelIn = row.querySelector('input[data-k$=":armg"]');
+        const armg = fuelIn.value ? parseFuel(fuelIn.value) : null;
+        mark(fuelIn, !fuelIn.value ? '' : armg === undefined ? 'bad' : 'man');
+        const fuelPill = fuelIn.parentElement.querySelector('.mp-dv');
+        if (armg != null && armg !== undefined) {
+          const dv = Math.round((armg - Number(row.dataset.prmg)) * 10) / 10;
+          pill(fuelPill, `${dv < 0 ? '-' : '+'}${Math.abs(dv).toFixed(1)}`, dv < 0 ? 'late' : 'ok');
+        } else pill(fuelPill, null);
+        // AFL
+        const flIn = row.querySelector('input[data-k$=":afl"]');
+        mark(flIn, !flIn.value ? '' : /^\d{2,3}$/.test(flIn.value.trim()) ? 'man' : 'bad');
+      });
+      headers.forEach((h) => {
+        if (!h.dataset.in) return;
+        h.textContent = `RETA ${hhmmOf(new Date(Number(h.dataset.in) + destShift))}Z`;
       });
     };
-    list.addEventListener('input', (e) => { if (e.target.matches('input[data-k$=":ata"]')) recompute(); });
+    // Typing is free-form; on leaving the box "1124" becomes "11:24" and "12" fuel becomes "12.0"
+    list.addEventListener('input', (e) => { if (e.target.matches('input[data-k]')) { delete e.target.dataset.src; recompute(); } });
+    list.addEventListener('change', (e) => {
+      const el = e.target;
+      if (el.matches('input[data-k$=":ata"]') && /^\d{4}$/.test(el.value.trim())) { el.value = `${el.value.slice(0, 2)}:${el.value.slice(2)}`; el.dispatchEvent(new Event('input', { bubbles: true })); }
+      if (el.matches('input[data-k$=":armg"]') && /^\d{1,3}$/.test(el.value.trim())) { el.value = `${Number(el.value)}.0`; el.dispatchEvent(new Event('input', { bubbles: true })); }
+    });
+    // Hook for a position source (e.g. a sim/VATSIM bridge): fill an ATA as "GPS" (green)
+    root.mpSetAta = (rowIndex, date) => {
+      const input = rows[rowIndex]?.querySelector('input[data-k$=":ata"]');
+      if (!input || input.value) return false;
+      input.value = `${Z(date.getUTCHours(), 2)}:${Z(date.getUTCMinutes(), 2)}`;
+      input.dispatchEvent(new Event('input', { bubbles: true }));
+      input.dataset.src = 'gps';
+      recompute();
+      return true;
+    };
     recompute();
   }
 
