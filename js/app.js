@@ -1,13 +1,14 @@
 (function () {
   'use strict';
 
-  const SETTINGS_KEY = 'psaOfp.settings';
-  const ID_KEY = 'psaOfp.simbriefId';
+  const SETTINGS_KEY = 'ofp.settings';
+  const ID_KEY = 'ofp.simbriefId';
+  const FORMAT_KEY = 'ofp.format';
   const API = 'https://www.simbrief.com/api/xml.fetcher.php';
 
   const $ = (id) => document.getElementById(id);
   const els = {
-    form: $('fetchForm'), id: $('sbId'), fetchBtn: $('fetchBtn'), file: $('fileInput'), demo: $('demoBtn'),
+    form: $('fetchForm'), id: $('sbId'), format: $('formatSelect'), formatDesc: $('formatDesc'), fetchBtn: $('fetchBtn'), file: $('fileInput'), demo: $('demoBtn'),
     settingsBtn: $('settingsBtn'), settings: $('settings'), settingsForm: $('settingsForm'), settingsClose: $('settingsClose'),
     status: $('status'), empty: $('empty'), output: $('output'), tabs: $('tabs'), paper: $('paper'),
     copy: $('copyBtn'), txt: $('txtBtn'), print: $('printBtn'),
@@ -36,6 +37,35 @@
     }
   }
 
+  // ---------- formats ----------
+  const currentFormat = () => window.OFPFormats.get(els.format.value);
+  function initFormats() {
+    const list = window.OFPFormats.list();
+    els.format.replaceChildren(...list.map((f) => {
+      const o = document.createElement('option');
+      o.value = f.id;
+      o.textContent = f.name;
+      return o;
+    }));
+    const saved = load(FORMAT_KEY, '');
+    if (list.some((f) => f.id === saved)) els.format.value = saved;
+    applyFormat();
+  }
+  function applyFormat() {
+    const f = currentFormat();
+    els.format.title = f.description || f.name;
+    if (els.formatDesc) els.formatDesc.textContent = f.description || '';
+    // show only the settings that belong to this format (plus general ones)
+    els.settingsForm.querySelectorAll('fieldset[data-format]').forEach((fs) => {
+      fs.hidden = fs.dataset.format !== (f.settingsGroup || f.id);
+    });
+  }
+  els.format.addEventListener('change', () => {
+    save(FORMAT_KEY, els.format.value);
+    applyFormat();
+    render();
+  });
+
   // ---------- status ----------
   function status(msg, kind) {
     els.status.textContent = msg || '';
@@ -46,7 +76,7 @@
   function render() {
     if (!lastOfp) return;
     try {
-      lastSections = window.PSAFormat.format(lastOfp, readSettings());
+      lastSections = currentFormat().format(lastOfp, readSettings());
     } catch (e) {
       status(e.message, 'error');
       return;
@@ -149,7 +179,7 @@
   const fullText = () => lastSections.map((s) => s.text).join('\n\n\f\n');
   const fileName = () => {
     const g = lastOfp?.general || {};
-    return `${g.flight_number || 'OFP'}_${lastOfp?.origin?.iata_code || lastOfp?.origin?.icao_code || ''}_${lastOfp?.destination?.iata_code || lastOfp?.destination?.icao_code || ''}.txt`;
+    return `${currentFormat().id.toUpperCase()}_${g.flight_number || 'OFP'}_${lastOfp?.origin?.iata_code || lastOfp?.origin?.icao_code || ''}_${lastOfp?.destination?.iata_code || lastOfp?.destination?.icao_code || ''}.txt`;
   };
   els.copy.addEventListener('click', async () => {
     try {
@@ -170,6 +200,7 @@
   els.print.addEventListener('click', () => window.print());
 
   // ---------- init ----------
+  initFormats();
   writeSettings(load(SETTINGS_KEY, {}));
   els.id.value = load(ID_KEY, '');
 })();

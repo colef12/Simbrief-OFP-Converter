@@ -1,8 +1,8 @@
 /*
- * PSA-style dispatch release formatter.
+ * Format: PSA Airlines dispatch release (ACARS-printed OFP).
  * Input: SimBrief OFP JSON (json=v2 or json=1) + settings object.
- * Output: array of sections { id, title, text } — plain monospaced text.
- * Works in the browser (window.PSAFormat) and in Node (module.exports).
+ * Output: array of sections { id, title, text, newPage? } of monospaced text.
+ * Browser: registers itself with window.OFPFormats. Node: module.exports.
  */
 (function (root) {
   'use strict';
@@ -625,7 +625,15 @@
     return sec.filter((s) => s.text);
   }
 
-  const api = { format, normalise, _internal: { windAt, speedProfile, cruiseProfile, crewName, notamCategory, latFmt, lonFmt } };
-  if (typeof module !== 'undefined' && module.exports) module.exports = api;
-  else root.PSAFormat = api;
+  const def = {
+    id: 'psa',
+    name: 'PSA Airlines (CRJ)',
+    description: 'ACARS-style dispatch release used at PSA Airlines: release, fuel block, nav log, spot winds, TLR, WX, NOTAMs.',
+    settingsGroup: 'psa',
+    format,
+    normalise,
+    _internal: { windAt, speedProfile, cruiseProfile, crewName, notamCategory, latFmt, lonFmt },
+  };
+  if (typeof module !== 'undefined' && module.exports) module.exports = def;
+  else root.OFPFormats.register(def);
 })(typeof window !== 'undefined' ? window : this);

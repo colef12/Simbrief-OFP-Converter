@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
-  <title>SimBrief → PSA OFP Converter</title>
+  <title>SimBrief OFP Converter</title>
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Courier+Prime&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
@@ -15,14 +15,16 @@
     <div class="brand">
       <span class="brand-mark">OFP</span>
       <div>
-        <div class="brand-title">SimBrief → PSA Release</div>
-        <div class="brand-sub">Dispatch release converter</div>
+        <div class="brand-title">SimBrief OFP Converter</div>
+        <div class="brand-sub">Airline-style flight plan formats</div>
       </div>
     </div>
 
     <form id="fetchForm" class="fetch">
       <label for="sbId" class="sr-only">SimBrief username or Pilot ID</label>
       <input id="sbId" type="text" placeholder="SimBrief username or Pilot ID" autocomplete="username" required>
+      <label for="formatSelect" class="sr-only">Output format</label>
+      <select id="formatSelect" title="Output format"></select>
       <button type="submit" class="btn primary" id="fetchBtn">Fetch latest OFP</button>
     </form>
 
@@ -30,7 +32,7 @@
       <label class="btn ghost" title="Load a SimBrief JSON file">
         Load JSON<input type="file" id="fileInput" accept=".json,application/json" hidden>
       </label>
-      <button class="btn ghost" id="demoBtn" title="Load the BTV–PHL sample">Demo</button>
+      <button class="btn ghost" id="demoBtn" title="Load a sample flight (BTV–PHL)">Demo</button>
       <button class="btn ghost" id="settingsBtn" aria-expanded="false" aria-controls="settings">Settings</button>
     </div>
   </header>
@@ -39,29 +41,29 @@
     <form id="settingsForm">
       <div class="settings-grid">
         <fieldset>
-          <legend>Crew &amp; dispatch</legend>
+          <legend>General</legend>
+          <label class="check"><input type="checkbox" name="convertToLbs" checked> Convert kg plans to lbs</label>
+          <label>Callsign override<input name="callsign" placeholder="from SimBrief"></label>
+          <label>Fleet numbers <small>REG=NUM, one per line</small><textarea name="fleetNumbers" rows="3" placeholder="N603NN=603"></textarea></label>
+          <label>Type designation override <small>TYPE=MODEL</small><textarea name="typeDesignations" rows="2" placeholder="CRJ9=CL600-2D24"></textarea></label>
+        </fieldset>
+        <fieldset data-format="psa">
+          <legend>PSA · Crew &amp; dispatch</legend>
           <label>Captain employee #<input name="captEmp" inputmode="numeric" placeholder="auto"></label>
           <label>F/O employee #<input name="foEmp" inputmode="numeric" placeholder="auto"></label>
           <label>Dispatcher phone<input name="dispatcherPhone" placeholder="1-800-…"></label>
           <label>Dispatch desk<input name="dispatchDesk" placeholder="DX"></label>
         </fieldset>
-        <fieldset>
-          <legend>Release header</legend>
+        <fieldset data-format="psa">
+          <legend>PSA · Release header</legend>
           <label>ACARS address line<input name="acarsAddress" placeholder="@QU INTXSAA"></label>
           <label>ACARS station<input name="acarsStation" placeholder="DAY75AA"></label>
-          <label>Callsign override<input name="callsign" placeholder="from SimBrief (e.g. JIA)"></label>
           <label>Standard route #<input name="routeNumber" placeholder="R00"></label>
-          <label class="check"><input type="checkbox" name="convertToLbs" checked> Convert kg plans to lbs</label>
-        </fieldset>
-        <fieldset>
-          <legend>Aircraft</legend>
-          <label>Fleet numbers <small>REG=NUM, one per line</small><textarea name="fleetNumbers" rows="3" placeholder="N603NN=603"></textarea></label>
           <label>BOW ARM <small>REG or TYPE=ARM</small><textarea name="bowArms" rows="3" placeholder="N603NN=871.82&#10;CRJ9=871.82"></textarea></label>
           <label>Max bags <small>TYPE=COUNT (default 2× seats)</small><textarea name="maxBags" rows="2" placeholder="CRJ9=160"></textarea></label>
-          <label>Type designation override <small>TYPE=MODEL</small><textarea name="typeDesignations" rows="2" placeholder="CRJ9=CL600-2D24"></textarea></label>
         </fieldset>
-        <fieldset>
-          <legend>A/C info (MEL placards)</legend>
+        <fieldset data-format="psa">
+          <legend>PSA · A/C info (MEL placards)</legend>
           <label>One per line: <small>PLACARD DESCRIPTION</small><textarea name="placards" rows="5" placeholder="33-21-1-2B CABIN INTERIOR LIGHTS"></textarea></label>
         </fieldset>
       </div>
@@ -76,9 +78,10 @@
     <div id="status" class="status" role="status" aria-live="polite"></div>
 
     <section id="empty" class="empty">
-      <h1>Turn your SimBrief plan into a PSA-format release.</h1>
-      <p>Generate a flight on SimBrief, enter your username or Pilot ID above and hit <b>Fetch latest OFP</b>.
-        Your ID is remembered in this browser. Try <b>Demo</b> to see the BTV–PHL sample.</p>
+      <h1>Turn your SimBrief plan into a real-world airline OFP format.</h1>
+      <p>Generate a flight on SimBrief, pick a format, enter your username or Pilot ID above and hit <b>Fetch latest OFP</b>.
+        Your ID and format are remembered in this browser. Try <b>Demo</b> to see a sample flight.</p>
+      <p id="formatDesc" class="format-desc"></p>
     </section>
 
     <section id="output" class="output" hidden>
@@ -98,7 +101,9 @@
     For flight simulation use only. Not for real-world navigation or dispatch.
   </footer>
 
-  <script src="js/psa-format.js"></script>
+  <script src="js/formats/registry.js"></script>
+  <script src="js/formats/psa.js"></script>
+  <!-- Add new formats here: <script src="js/formats/your-format.js"></script> -->
   <script src="js/app.js"></script>
 </body>
 </html>
