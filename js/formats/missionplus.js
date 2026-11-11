@@ -249,7 +249,7 @@ ${body}
       <div class="mp-fix">
         <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
         <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}">
-          <span>${esc(hh(r.eta))}</span><span class="mp-eta">${esc(hh(r.eta))}</span><span>${box(`${i}:ata`, 'hhmm', 'w4')}</span>
+          <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span>${box(`${i}:ata`, 'hhmm', 'w4')}</span>
           <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span>${box(`${i}:armg`, 'NNN.N', 'w5')}</span>
           <span>${esc(r.fl)}</span><span>${box(`${i}:afl`, 'NNN', 'w3')}</span>
         </div>
@@ -273,7 +273,7 @@ ${body}
   </div>`);
   }
 
-  // Live behaviour after render: RETA stays at the plan; ETA = latest ATA entered (the airport row's ATA is the
+  // Live behaviour after render: RETA = latest ATA entered (the airport row's ATA is the
   // actual OFF time) + planned time from that fix. Rows before the latest ATA keep their own.
   function enhance(root) {
     const list = root.querySelector('.mp-nllist');
@@ -300,10 +300,10 @@ ${body}
         const ata = input.value ? parse(input.value, planned) : null;
         input.classList.toggle('bad', ata === undefined);
         if (ata) base = { time: ata.getTime(), tcum };
-        const cell = row.querySelector('.mp-eta');
-        const eta = base ? new Date(base.time + (tcum - base.tcum) * 1000) : (planned ? new Date(planned) : null);
-        cell.textContent = eta ? hhmmOf(eta) : '--:--';
-        cell.classList.toggle('rev', !!base && eta.getTime() !== planned);
+        const cell = row.querySelector('.mp-reta');
+        const reta = base ? new Date(base.time + (tcum - base.tcum) * 1000) : (planned ? new Date(planned) : null);
+        cell.textContent = reta ? hhmmOf(reta) : '--:--';
+        cell.classList.toggle('rev', !!base && reta.getTime() !== planned);
       });
     };
     list.addEventListener('input', (e) => { if (e.target.matches('input[data-k$=":ata"]')) recompute(); });

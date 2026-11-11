@@ -241,5 +241,5 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
   .mp-nlside { display: none; }
 }
 .paper.device section + section { border: 0; margin: 0; padding: 0; }
-.mp-eta.rev { color: #5ee3c4; }
+.mp-reta.rev { color: #5ee3c4; }
 .mp-in.bad { border-color: #f0776c; }
