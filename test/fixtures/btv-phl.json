@@ -1,0 +1,1223 @@
+{
+ "fetch": {
+  "status": "Success"
+ },
+ "params": {
+  "request_id": "84099301",
+  "time_generated": "2022-08-04T08:33:00Z",
+  "units": "lbs",
+  "airac": "2208"
+ },
+ "general": {
+  "release": "1",
+  "icao_airline": "JIA",
+  "flight_number": "5034",
+  "dx_rmk": [
+   "NONE"
+  ],
+  "cruise_profile": "CI 17",
+  "climb_profile": "250/290/74",
+  "descent_profile": "74/290/250",
+  "costindex": "17",
+  "initial_altitude": "26000",
+  "avg_wind_comp": "-14",
+  "route_distance": "366",
+  "air_distance": "380",
+  "route": "DCT ALB DCT DNY SPUDS4",
+  "passengers": "66"
+ },
+ "origin": {
+  "icao_code": "KBTV",
+  "iata_code": "BTV",
+  "name": "BURLINGTON INTL",
+  "timezone": "-4",
+  "plan_rwy": "15",
+  "metar": "KBTV 040854Z 19013KT 10SM CLR 24/15 A2992 RMK AO2 SLP131 T02390150 53000",
+  "taf": "KBTV 040526Z 0406/0506 18008KT P6SM FEW250\nFM042000 28008KT P6SM VCSH BKN080",
+  "notam": [
+   {
+    "notam_id": "A1770/22",
+    "location_icao": "KBTV",
+    "notam_text": "RWY 33 PAPI U/S",
+    "notam_qcode": "QLPAS",
+    "date_effective": "2022-08-04T11:00:00Z",
+    "date_expire": "2022-08-04T16:00:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "A1772/22",
+    "location_icao": "KBTV",
+    "notam_text": "PCL RWY 15 ALS U/S",
+    "notam_qcode": "QLAAS",
+    "date_effective": "2022-08-04T04:16:00Z",
+    "date_expire": "2022-08-11T20:00:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "A1748/22",
+    "location_icao": "KBTV",
+    "notam_text": "TWY L CLSD",
+    "notam_qcode": "QMXLC",
+    "date_effective": "2022-07-30T15:36:00Z",
+    "date_expire": "2022-08-13T11:59:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "07/161",
+    "location_icao": "KBTV",
+    "notam_text": "OBST CRANE ASN 2021-ANE-1266-NRA 442745N0730829W 0.8NM SE BTV 460FT 140FT AGL FLAGGED",
+    "notam_qcode": "QOBCE",
+    "date_effective": "2022-07-25T11:00:00Z",
+    "date_expire": "2022-10-31T23:59:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": true
+   },
+   {
+    "notam_id": "10/054",
+    "location_icao": "KBTV",
+    "notam_text": "AD HLP CHANGED TO PRIVATE",
+    "notam_qcode": "QFHXX",
+    "date_effective": "2021-10-14T01:41:00Z",
+    "date_expire": "2099-12-31T23:59:00Z",
+    "date_expire_is_estimated": true,
+    "notam_is_obstacle": false
+   }
+  ]
+ },
+ "destination": {
+  "icao_code": "KPHL",
+  "iata_code": "PHL",
+  "name": "PHILADELPHIA INTL",
+  "timezone": "-4",
+  "plan_rwy": "09R",
+  "metar": "KPHL 040854Z 18003KT 10SM CLR 24/22 A3004 RMK AO2 SLP170 T02440217 51002",
+  "taf": "KPHL 040853Z 0409/0512 21005KT P6SM FEW250\nFM041800 22007KT P6SM FEW050 SCT250\nFM050200 22005KT P6SM SCT045 BKN250",
+  "notam": [
+   {
+    "notam_id": "A3020/22",
+    "location_icao": "KPHL",
+    "notam_text": "ILS RWY 26 DME U/S",
+    "notam_qcode": "QIDAS",
+    "date_effective": "2022-08-02T09:20:00Z",
+    "date_expire": "2022-08-12T20:00:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "A3030/22",
+    "location_icao": "KPHL",
+    "notam_text": "TWY L CLSD DAILY 1100-2000",
+    "notam_qcode": "QMXLC",
+    "date_effective": "2022-08-03T11:00:00Z",
+    "date_expire": "2022-08-05T20:00:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "A3021/22",
+    "location_icao": "KPHL",
+    "notam_text": "TAR/SSR U/S",
+    "notam_qcode": "QSAAS",
+    "date_effective": "2022-08-04T12:00:00Z",
+    "date_expire": "2022-08-04T20:00:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   },
+   {
+    "notam_id": "A0100/22",
+    "location_icao": "KPHL",
+    "notam_text": "BUNTS TWO ARRIVAL... UNUSABLE 1 BLW 5000FT MSL BTN PSB AND HAR 2 BLW 4000FT MSL BTN HAR AND BOUHN",
+    "notam_qcode": "QPACH",
+    "date_effective": "2022-01-06T00:00:00Z",
+    "date_expire": "2023-01-05T23:59:00Z",
+    "date_expire_is_estimated": false,
+    "notam_is_obstacle": false
+   }
+  ]
+ },
+ "alternate": [],
+ "navlog": [
+  {
+   "ident": "TOC",
+   "name": "TOC",
+   "type": "ltlg",
+   "frequency": "",
+   "pos_lat": "43.36",
+   "pos_long": "-73.576667",
+   "stage": "CLB",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "69",
+   "track_true": "199",
+   "track_mag": "213",
+   "heading_true": "202",
+   "heading_mag": "216",
+   "altitude_feet": "26000",
+   "groundspeed": "389",
+   "time_leg": "00:12:00",
+   "time_total": "00:12:00",
+   "fuel_leg": "1473",
+   "fuel_plan_onboard": "6222",
+   "oat": "-22",
+   "wind_dir": "220",
+   "wind_spd": "31",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "232",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "224",
+     "wind_spd": "23",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "212",
+     "wind_spd": "25",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "209",
+     "wind_spd": "22",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "204",
+     "wind_spd": "19",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "ALB",
+   "name": "ALB",
+   "type": "vor",
+   "frequency": "115.30",
+   "pos_lat": "42.746667",
+   "pos_long": "-73.803333",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "38",
+   "track_true": "199",
+   "track_mag": "213",
+   "heading_true": "199",
+   "heading_mag": "213",
+   "altitude_feet": "26000",
+   "groundspeed": "389",
+   "time_leg": "00:06:00",
+   "time_total": "00:18:00",
+   "fuel_leg": "362",
+   "fuel_plan_onboard": "5860",
+   "oat": "-22",
+   "wind_dir": "220",
+   "wind_spd": "31",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "223",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "217",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "201",
+     "wind_spd": "19",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "193",
+     "wind_spd": "18",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "184",
+     "wind_spd": "17",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "DNY",
+   "name": "DNY",
+   "type": "vor",
+   "frequency": "112.10",
+   "pos_lat": "42.178333",
+   "pos_long": "-74.956667",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "62",
+   "track_true": "234",
+   "track_mag": "248",
+   "heading_true": "234",
+   "heading_mag": "248",
+   "altitude_feet": "26000",
+   "groundspeed": "396",
+   "time_leg": "00:10:00",
+   "time_total": "00:28:00",
+   "fuel_leg": "569",
+   "fuel_plan_onboard": "5291",
+   "oat": "-22",
+   "wind_dir": "200",
+   "wind_spd": "20",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "219",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "214",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "196",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "186",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "175",
+     "wind_spd": "16",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "DNY15",
+   "name": "DNY15",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "41.965",
+   "pos_long": "-75.131667",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "15",
+   "track_true": "208",
+   "track_mag": "222",
+   "heading_true": "208",
+   "heading_mag": "222",
+   "altitude_feet": "26000",
+   "groundspeed": "396",
+   "time_leg": "00:02:00",
+   "time_total": "00:30:00",
+   "fuel_leg": "138",
+   "fuel_plan_onboard": "5153",
+   "oat": "-22",
+   "wind_dir": "180",
+   "wind_spd": "16",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "212",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "225",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "206",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "183",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "162",
+     "wind_spd": "14",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "CORLE",
+   "name": "CORLE",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "41.445",
+   "pos_long": "-75.553333",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "37",
+   "track_true": "209",
+   "track_mag": "223",
+   "heading_true": "209",
+   "heading_mag": "223",
+   "altitude_feet": "26000",
+   "groundspeed": "397",
+   "time_leg": "00:06:00",
+   "time_total": "00:36:00",
+   "fuel_leg": "332",
+   "fuel_plan_onboard": "4821",
+   "oat": "-22",
+   "wind_dir": "180",
+   "wind_spd": "14",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "208",
+     "wind_spd": "12",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "230",
+     "wind_spd": "12",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "213",
+     "wind_spd": "12",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "183",
+     "wind_spd": "12",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "157",
+     "wind_spd": "14",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "LVZ",
+   "name": "LVZ",
+   "type": "vor",
+   "frequency": "111.60",
+   "pos_lat": "41.273333",
+   "pos_long": "-75.69",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "12",
+   "track_true": "208",
+   "track_mag": "222",
+   "heading_true": "208",
+   "heading_mag": "222",
+   "altitude_feet": "26000",
+   "groundspeed": "398",
+   "time_leg": "00:01:00",
+   "time_total": "00:37:00",
+   "fuel_leg": "109",
+   "fuel_plan_onboard": "4712",
+   "oat": "-22",
+   "wind_dir": "180",
+   "wind_spd": "12",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "212",
+     "wind_spd": "9",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "240",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "228",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "198",
+     "wind_spd": "11",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "161",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "SLATT",
+   "name": "SLATT",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "40.738333",
+   "pos_long": "-75.685",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "32",
+   "track_true": "176",
+   "track_mag": "190",
+   "heading_true": "176",
+   "heading_mag": "190",
+   "altitude_feet": "26000",
+   "groundspeed": "397",
+   "time_leg": "00:05:00",
+   "time_total": "00:42:00",
+   "fuel_leg": "290",
+   "fuel_plan_onboard": "4422",
+   "oat": "-23",
+   "wind_dir": "180",
+   "wind_spd": "11",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "219",
+     "wind_spd": "9",
+     "oat": "-20"
+    },
+    {
+     "altitude": "22000",
+     "wind_dir": "242",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "24000",
+     "wind_dir": "232",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "26000",
+     "wind_dir": "208",
+     "wind_spd": "11",
+     "oat": "-20"
+    },
+    {
+     "altitude": "28000",
+     "wind_dir": "173",
+     "wind_spd": "10",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "ETX",
+   "name": "ETX",
+   "type": "vor",
+   "frequency": "110.20",
+   "pos_lat": "40.581667",
+   "pos_long": "-75.683333",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "9",
+   "track_true": "178",
+   "track_mag": "192",
+   "heading_true": "178",
+   "heading_mag": "192",
+   "altitude_feet": "26000",
+   "groundspeed": "398",
+   "time_leg": "00:02:00",
+   "time_total": "00:44:00",
+   "fuel_leg": "70",
+   "fuel_plan_onboard": "4352",
+   "oat": "-23",
+   "wind_dir": "200",
+   "wind_spd": "11",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "228",
+     "wind_spd": "8",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "248",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "238",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "224",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "199",
+     "wind_spd": "10",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "SPUDS",
+   "name": "SPUDS",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "40.451667",
+   "pos_long": "-75.433333",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "14",
+   "track_true": "120",
+   "track_mag": "134",
+   "heading_true": "120",
+   "heading_mag": "134",
+   "altitude_feet": "25000",
+   "groundspeed": "401",
+   "time_leg": "00:02:00",
+   "time_total": "00:46:00",
+   "fuel_leg": "123",
+   "fuel_plan_onboard": "4229",
+   "oat": "-21",
+   "wind_dir": "220",
+   "wind_spd": "12",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "238",
+     "wind_spd": "8",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "250",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "241",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "231",
+     "wind_spd": "13",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "213",
+     "wind_spd": "10",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "TOD",
+   "name": "TOD",
+   "type": "ltlg",
+   "frequency": "",
+   "pos_lat": "40.321667",
+   "pos_long": "-75.356667",
+   "stage": "CRZ",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "9",
+   "track_true": "156",
+   "track_mag": "170",
+   "heading_true": "156",
+   "heading_mag": "170",
+   "altitude_feet": "25000",
+   "groundspeed": "401",
+   "time_leg": "00:01:00",
+   "time_total": "00:47:00",
+   "fuel_leg": "77",
+   "fuel_plan_onboard": "4152",
+   "oat": "-21",
+   "wind_dir": "220",
+   "wind_spd": "31",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "250",
+     "wind_spd": "10",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "254",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "242",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "240",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "ANMAR",
+   "name": "ANMAR",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "40.266667",
+   "pos_long": "-75.325",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "4",
+   "track_true": "156",
+   "track_mag": "170",
+   "heading_true": "156",
+   "heading_mag": "170",
+   "altitude_feet": "21000",
+   "groundspeed": "380",
+   "time_leg": "00:01:00",
+   "time_total": "00:48:00",
+   "fuel_leg": "14",
+   "fuel_plan_onboard": "4138",
+   "oat": "-15",
+   "wind_dir": "220",
+   "wind_spd": "25",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "246",
+     "wind_spd": "8",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "252",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "244",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "238",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "229",
+     "wind_spd": "11",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "SCOOL",
+   "name": "SCOOL",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "40.066667",
+   "pos_long": "-75.42",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "13",
+   "track_true": "200",
+   "track_mag": "214",
+   "heading_true": "200",
+   "heading_mag": "214",
+   "altitude_feet": "15000",
+   "groundspeed": "340",
+   "time_leg": "00:02:00",
+   "time_total": "00:50:00",
+   "fuel_leg": "47",
+   "fuel_plan_onboard": "4091",
+   "oat": "-5",
+   "wind_dir": "220",
+   "wind_spd": "20",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "251",
+     "wind_spd": "9",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "253",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "241",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "234",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "KYILL",
+   "name": "KYILL",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.935",
+   "pos_long": "-75.38",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "8",
+   "track_true": "167",
+   "track_mag": "181",
+   "heading_true": "167",
+   "heading_mag": "181",
+   "altitude_feet": "11000",
+   "groundspeed": "300",
+   "time_leg": "00:02:00",
+   "time_total": "00:52:00",
+   "fuel_leg": "28",
+   "fuel_plan_onboard": "4063",
+   "oat": "3",
+   "wind_dir": "220",
+   "wind_spd": "18",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "251",
+     "wind_spd": "9",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "253",
+     "wind_spd": "14",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "241",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "236",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "EXPRS",
+   "name": "EXPRS",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.906667",
+   "pos_long": "-75.506667",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "6",
+   "track_true": "252",
+   "track_mag": "266",
+   "heading_true": "252",
+   "heading_mag": "266",
+   "altitude_feet": "8000",
+   "groundspeed": "280",
+   "time_leg": "00:01:00",
+   "time_total": "00:53:00",
+   "fuel_leg": "23",
+   "fuel_plan_onboard": "4040",
+   "oat": "8",
+   "wind_dir": "230",
+   "wind_spd": "15",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "250",
+     "wind_spd": "10",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "254",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "242",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "240",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "WHEYY",
+   "name": "WHEYY",
+   "type": "wpt",
+   "frequency": "",
+   "pos_lat": "39.846667",
+   "pos_long": "-75.791667",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "14",
+   "track_true": "252",
+   "track_mag": "266",
+   "heading_true": "252",
+   "heading_mag": "266",
+   "altitude_feet": "5000",
+   "groundspeed": "250",
+   "time_leg": "00:02:00",
+   "time_total": "00:55:00",
+   "fuel_leg": "50",
+   "fuel_plan_onboard": "3990",
+   "oat": "15",
+   "wind_dir": "230",
+   "wind_spd": "10",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "250",
+     "wind_spd": "10",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "254",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "242",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "240",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  },
+  {
+   "ident": "KPHL",
+   "name": "KPHL",
+   "type": "apt",
+   "frequency": "",
+   "pos_lat": "39.871667",
+   "pos_long": "-75.24",
+   "stage": "DSC",
+   "via_airway": "DCT",
+   "is_sid_star": "0",
+   "distance": "26",
+   "track_true": "81",
+   "track_mag": "95",
+   "heading_true": "81",
+   "heading_mag": "95",
+   "altitude_feet": "36",
+   "groundspeed": "180",
+   "time_leg": "00:05:00",
+   "time_total": "01:00:00",
+   "fuel_leg": "191",
+   "fuel_plan_onboard": "3799",
+   "oat": "24",
+   "wind_dir": "180",
+   "wind_spd": "03",
+   "wind_data": [
+    {
+     "altitude": "10000",
+     "wind_dir": "250",
+     "wind_spd": "10",
+     "oat": "-20"
+    },
+    {
+     "altitude": "21000",
+     "wind_dir": "254",
+     "wind_spd": "15",
+     "oat": "-20"
+    },
+    {
+     "altitude": "23000",
+     "wind_dir": "246",
+     "wind_spd": "17",
+     "oat": "-20"
+    },
+    {
+     "altitude": "25000",
+     "wind_dir": "242",
+     "wind_spd": "16",
+     "oat": "-20"
+    },
+    {
+     "altitude": "27000",
+     "wind_dir": "240",
+     "wind_spd": "12",
+     "oat": "-20"
+    }
+   ]
+  }
+ ],
+ "aircraft": {
+  "icaocode": "CRJ9",
+  "iatacode": "CR9",
+  "icao_code": "CRJ9",
+  "iata_code": "CR9",
+  "name": "CRJ-900",
+  "engines": "CF34-8C5",
+  "reg": "N603NN",
+  "fin": "603",
+  "equip": "M-SDE3FGRWZ/LB1",
+  "max_passengers": "76"
+ },
+ "fuel": {
+  "taxi": "287",
+  "enroute_burn": "3896",
+  "contingency": "1082",
+  "alternate_burn": "0",
+  "reserve": "2387",
+  "etops": "0",
+  "extra": "330",
+  "min_takeoff": "7365",
+  "plan_takeoff": "7695",
+  "plan_ramp": "7982",
+  "plan_landing": "3799",
+  "max_tanks": "19594"
+ },
+ "times": {
+  "est_time_enroute": "01:00:00",
+  "sched_out": "2022-08-04T10:00:00Z",
+  "sched_off": "2022-08-04T10:15:00Z",
+  "sched_on": "2022-08-04T11:20:00Z",
+  "sched_in": "2022-08-04T11:29:00Z",
+  "taxi_out": "00:15:00",
+  "taxi_in": "00:09:00",
+  "reserve_time": "00:45:00",
+  "contfuel_time": "00:24:00",
+  "extrafuel_time": "00:06:00",
+  "etopsfuel_time": "00:00:00",
+  "orig_timezone": "-04:00:00"
+ },
+ "weights": {
+  "oew": "49201",
+  "pax_count": "66",
+  "bag_count": "66",
+  "payload": "16434",
+  "est_zfw": "65635",
+  "max_zfw": "70750",
+  "est_tow": "73330",
+  "max_tow": "84300",
+  "max_tow_struct": "84500",
+  "est_ldw": "69434",
+  "max_ldw": "75100",
+  "est_ramp": "73617"
+ },
+ "crew": {
+  "cpt": "KYLE BARNES",
+  "fo": "JAMES FIELDS",
+  "dx": "PAT DISPATCHER",
+  "pu": "MARY HOLT",
+  "fa": [
+   "BETH KING"
+  ]
+ },
+ "atc": {
+  "callsign": "JIA5034",
+  "flightplan_text": "(FPL-JIA5034-IS\n-CRJ9/M-SDE3FGRWZ/LB1\n-KBTV1000\n-N0415F260 DCT ALB DCT DNY SPUDS4\n-KPHL0100\n-PBN/B2B3B4C2D2D3O2 NAV/RNVD1E2A1 SUR/260B REG/N603NN\n CODE/A7D39D)"
+ },
+ "weather": {
+  "orig_metar": "",
+  "dest_metar": ""
+ },
+ "sigmets": [],
+ "tlr": {
+  "takeoff": {
+   "conditions": {
+    "airport_icao": "KBTV",
+    "planned_runway": "15",
+    "planned_weight": "73300",
+    "wind_direction": "0",
+    "wind_speed": "0",
+    "temperature": "24",
+    "altimeter": "29.93",
+    "surface_condition": "dry"
+   },
+   "runway": [
+    {
+     "identifier": "15",
+     "length": "7820",
+     "flap_setting": "20",
+     "thrust_setting": "FLEX",
+     "bleed_setting": "ON",
+     "anti_ice_setting": "OFF",
+     "flex_temperature": "42",
+     "max_weight": "84300",
+     "speeds_v1": "127",
+     "speeds_vr": "132",
+     "speeds_v2": "138",
+     "speeds_other": "197",
+     "speeds_other_id": "VT"
+    },
+    {
+     "identifier": "33",
+     "length": "8320",
+     "flap_setting": "20",
+     "thrust_setting": "FLEX",
+     "bleed_setting": "ON",
+     "anti_ice_setting": "OFF",
+     "flex_temperature": "45",
+     "max_weight": "84300",
+     "speeds_v1": "127",
+     "speeds_vr": "132",
+     "speeds_v2": "139",
+     "speeds_other": "197",
+     "speeds_other_id": "VT"
+    }
+   ]
+  },
+  "landing": {
+   "conditions": {
+    "airport_icao": "KPHL",
+    "planned_runway": "09R",
+    "planned_weight": "69400",
+    "flap_setting": "45",
+    "wind_direction": "0",
+    "wind_speed": "0",
+    "temperature": "25",
+    "altimeter": "30.03",
+    "surface_condition": "dry"
+   },
+   "distance_dry": {
+    "weight": "69400",
+    "flap_setting": "45",
+    "reverser_credit": "YES",
+    "speeds_vref": "140",
+    "actual_distance": "2900",
+    "factored_distance": "4353"
+   },
+   "distance_wet": {
+    "weight": "69400",
+    "flap_setting": "45",
+    "reverser_credit": "YES",
+    "speeds_vref": "140",
+    "actual_distance": "3400",
+    "factored_distance": "5347"
+   },
+   "runway": [
+    {
+     "identifier": "09L",
+     "length": "9500",
+     "max_weight_dry": "88700",
+     "max_weight_wet": "88700"
+    },
+    {
+     "identifier": "09R",
+     "length": "12000",
+     "max_weight_dry": "88700",
+     "max_weight_wet": "88700"
+    },
+    {
+     "identifier": "27L",
+     "length": "9912",
+     "max_weight_dry": "88700",
+     "max_weight_wet": "88700"
+    }
+   ]
+  }
+ }
+}
