@@ -226,7 +226,23 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nlside { display: flex; flex-direction: column; gap: .6em; padding: 0 .6em .6em; }
 .mp-sbtn { display: inline-flex; align-items: center; justify-content: center; width: 3.2em; height: 3.2em; background: #24365f; border-radius: 3px; color: #e9eefb; cursor: pointer; }
 .mp-sbtn .mp-ico { width: 2em; height: 2em; }
-.mp-fix { margin: .2em 0 0 0; padding: .7em .2em .8em .5em; background: #1b2541; border-radius: 3px; }
+.mp-fix { margin: .2em 0 0 0; padding: .7em .2em .8em .5em; background: #1b2541; border-radius: 3px; cursor: pointer; transition: background-color .25s ease; }
+.mp-fix:focus-visible { outline: 2px solid var(--mp-teal); outline-offset: 1px; }
+.mp-fix.open { background: #2f5bd3; }
+.mp-fixx { display: grid; grid-template-rows: 0fr; transition: grid-template-rows .3s ease; }
+.mp-fix.open .mp-fixx { grid-template-rows: 1fr; }
+.mp-fixxi { overflow: hidden; min-height: 0; }
+.mp-fix.open .mp-fixxi { animation: mp-slide .3s ease; }
+@keyframes mp-slide { from { transform: translateY(-8px); opacity: 0; } to { transform: none; opacity: 1; } }
+.mp-xrow { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr .9fr 1fr; padding: .7em 0 .6em; border-top: 1px solid rgba(217,225,242,.35); margin-top: .5em; }
+.mp-xc { padding-left: .4em; min-height: 2.6em; } .mp-xc + .mp-xc { border-left: 1px solid rgba(217,225,242,.35); }
+.mp-xc small { display: block; color: #d9e1f2; font-size: .82em; margin-bottom: .25em; }
+.mp-xc span { font-size: .95em; } .mp-xc .mono, .mp-xc b { font: 600 1.15em "SF Mono", Menlo, Consolas, monospace; }
+.mp-xrmk, .mp-xnote { border-top: 1px solid rgba(217,225,242,.35); padding: .7em .4em; }
+.mp-xrmk small, .mp-xnote small { display: block; color: #d9e1f2; font-size: .82em; margin-bottom: .5em; }
+.mp-xrmk div { padding: .15em .6em; font-weight: 600; }
+.mp-note { width: 100%; background: transparent; border: 0; color: #fff; font: inherit; font-size: 1.05em; padding: .2em 0; }
+.mp-note::placeholder { color: #d9e1f2; opacity: .85; } .mp-note:focus { outline: none; }
 .mp-fixh { display: flex; align-items: center; gap: .5em; margin-bottom: .45em; }
 .mp-fixh b { font-size: 1.05em; } .mp-kb { width: 1.4em; height: 1.4em; }
 .mp-bub { display: inline-flex; padding: .05em .35em; border: 1.5px solid #d9e1f2; border-radius: 6px; } .mp-bub .mp-ico { width: 1.1em; height: 1.1em; }

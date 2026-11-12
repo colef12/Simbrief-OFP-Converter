@@ -213,20 +213,78 @@ ${body}
   const showFl = (f) => up(f.stage) === 'CRZ' || ['TOC', 'TOD'].includes(up(f.ident));
   const mach = (f) => { const v = num(f.mach); return showFl(f) && v ? `M.${Z(Math.round((v < 1 ? v * 1000 : v)), 3)}` : '-'; };
 
+  // Remarks per nav log fix from SimBrief's OFP text (e.g. DAL layout "** EIN POSN RPT **",
+  // "** CLIMB TO FL370 **", FIR / ETOPS lines). Blocks are matched to fixes in route order.
+  function ofpRemarks(ofp, ids) {
+    const html = str(ofp?.text?.plan_html);
+    const out = ids.map(() => []);
+    if (!html) return out;
+    const txt = html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+    const blocks = txt.split(/\n\s*-{20,}\s*(?=\n)/).map((b) => {
+      const lines = b.split('\n');
+      const idLine = lines.find((l) => /^\S/.test(l) && /\s[EW]\s?\d{5}\.\d/.test(l));
+      if (!idLine) return null;
+      let id = idLine.slice(0, 16).trim().toUpperCase();
+      if (/T-O-C/.test(id)) id = 'TOC'; else if (/T-O-D/.test(id)) id = 'TOD';
+      const rm = lines.map((l) => /^\s*\*\*\s*(.+?)\s*\*\*\s*$/.exec(l)).filter(Boolean).map((x) => `** ${x[1].replace(/\s+/g, ' ')} **`);
+      const posTable = lines.some((l) => /^\s*POSITION\s+ATA\s+FL/.test(l));
+      if (posTable && !rm.some((x) => /POSN RPT/.test(x))) rm.unshift('** POSN RPT **');
+      return { id: id.split(/\s+/)[0], rm };
+    }).filter(Boolean);
+    let p = 0;
+    ids.forEach((id, i) => {
+      for (let k = p; k < Math.min(blocks.length, p + 6); k++) {
+        if (blocks[k].id === id) { out[i] = blocks[k].rm; p = k + 1; break; }
+      }
+    });
+    return out;
+  }
+
+  const dms = (v, pos, neg, w) => {
+    const n = num(v); const a = Math.abs(n); const d = Math.floor(a);
+    return `${n < 0 ? neg : pos}${Z(d, w)}°${((a - d) * 60).toFixed(1).padStart(4, '0')}'`;
+  };
+
+  // Expanded fix panel (opens when the fix is tapped)
+  function details(r, i, m) {
+    const f = r.f || {};
+    const o = m.o;
+    const dash = (v) => (str(v) ? esc(str(v)) : '-');
+    const trmg = Math.max(0, secs(o.times.est_time_enroute) - r.tcum);
+    const wind = str(f.wind_dir) ? `${Z(num(f.wind_dir), 3)}/${Z(num(f.wind_spd), 3)}` : '';
+    const trop = num(f.tropopause_feet) ? `FL${Z(Math.round(num(f.tropopause_feet) / 100), 3)}` : '';
+    const trk = str(f.track_true) ? `${Z(num(f.track_true), 3)}/${Z(num(f.track_mag), 3)}` : '';
+    const name = up(f.name) && up(f.name) !== r.id ? up(f.name) : '';
+    const cell = (k, v) => `<div class="mp-xc"><small>${k}</small><span>${v}</span></div>`;
+    const blank = '<div class="mp-xc"></div>';
+    return `
+        <div class="mp-fixx"><div class="mp-fixxi">
+          <div class="mp-xrow">${blank}${blank}${blank}${cell('TRMG', `<b class="mono">${esc(hm(trmg))}</b>`)}${blank}${blank}${blank}${cell('MSA', '-')}</div>
+          <div class="mp-xrow">${cell('IAS<sup>kt</sup>', dash(r.origin ? '' : num(f.ind_airspeed) || ''))}${cell('GS<sup>kt</sup>', dash(r.origin ? '' : num(f.groundspeed) || ''))}${cell('Wind', dash(wind))}${cell('TROP', dash(trop))}
+            ${cell('Latitude', r.lat ? esc(dms(r.lat, 'N', 'S', 2)) : '-')}${cell('Longitude', r.lon ? esc(dms(r.lon, 'E', 'W', 3)) : '-')}${cell('TRK-T/M', dash(trk))}${cell('Airspace', dash(r.fir))}</div>
+          <div class="mp-xrow">${cell('Name', dash(name))}${cell('Frequency', dash(f.frequency))}${blank}${blank}${blank}${blank}${blank}${blank}</div>
+          <div class="mp-xrmk"><small>Remarks</small>${r.remarks.map((x) => `<div>${esc(x)}</div>`).join('')}</div>
+          <div class="mp-xnote"><small>Clearance or Notes</small>
+            <input class="mp-note" data-k="nl:${i}:note" placeholder="Type here" autocomplete="off" spellcheck="false"></div>
+        </div></div>`;
+  }
+
   function navRows(m, ofp) {
     const { o } = m;
     const W = o.W;
     const off = m.eOff;
-    const rows = [{ id: up(o.origin?.icao), tcum: 0, fob: W(o.fuel.plan_takeoff), fl: '-', origin: true, fir: '', lat: num(o.origin?.raw?.pos_lat), lon: num(o.origin?.raw?.pos_long) }];
+    const rows = [{ id: up(o.origin?.icao), tcum: 0, fob: W(o.fuel.plan_takeoff), fl: '-', origin: true, fir: '', lat: num(o.origin?.raw?.pos_lat), lon: num(o.origin?.raw?.pos_long), f: { name: o.origin?.name } }];
     o.navlog.forEach((f) => {
       const id = up(f.ident);
       rows.push({
         id, tcum: secs(f.time_total), fob: W(f.fuel_plan_onboard), fl: showFl(f) ? `FL${Z(C.flOf(f.altitude_feet), 3)}` : '-',
-        toc: id === 'TOC', tod: id === 'TOD', fir: up(f.fir), lat: num(f.pos_lat), lon: num(f.pos_long),
+        toc: id === 'TOC', tod: id === 'TOD', fir: up(f.fir), lat: num(f.pos_lat), lon: num(f.pos_long), f,
         leg: { via: isProc(f) ? '' : up(f.via_airway) || 'DCT', dist: Math.round(num(f.distance)), time: secs(f.time_leg), fuel: Math.round(W(f.fuel_leg) / 100) * 100, mach: mach(f) },
       });
     });
     rows.forEach((r) => { r.eta = addSec(off, r.tcum); });
+    const rmk = ofpRemarks(ofp, rows.map((r) => r.id));
+    rows.forEach((r, i) => { r.remarks = rmk[i] || []; r.rpt = r.remarks.some((x) => /POSN RPT|POSITION REP/.test(x)); });
     return rows;
   }
 
@@ -244,15 +302,17 @@ ${body}
     const body = rows.map((r, i) => {
       const next = rows[i + 1];
       const firCross = r.fir && i > 1 && rows[i - 1].fir && rows[i - 1].fir !== r.fir;
-      const tags = (r.toc || r.tod) ? `<span class="mp-bub">${ico('chat')}</span><span class="mp-tag">${r.toc ? 'TOC' : 'TOD'}</span>` : '';
+      const kind = r.toc ? 'TOC' : r.tod ? 'TOD' : r.rpt ? 'RPT' : '';
+      const tags = `${(kind || r.remarks.length) ? `<span class="mp-bub">${ico('chat')}</span>` : ''}${kind ? `<span class="mp-tag">${kind}</span>` : ''}`;
       return `${firCross ? `<div class="mp-fir"><span>FIR</span></div>` : ''}
-      <div class="mp-fix">
+      <div class="mp-fix" data-fix="${i}" tabindex="0" role="button" aria-expanded="false">
         <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
         <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}" data-prmg="${(r.fob / 1000).toFixed(1)}" data-lat="${r.lat || ''}" data-lon="${r.lon || ''}">
           <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span class="mp-ent">${box(`${i}:ata`, 'hhmm', 'w4')}<em class="mp-dv" hidden></em></span>
           <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span class="mp-ent">${box(`${i}:armg`, 'NNN.N', 'w5')}<em class="mp-dv" hidden></em></span>
           <span>${esc(r.fl)}</span><span class="mp-ent">${box(`${i}:afl`, 'NNN', 'w3')}</span>
         </div>
+        ${details(r, i, m)}
       </div>${next ? leg(next.leg) : ''}`;
     }).join('');
 
@@ -291,6 +351,20 @@ ${body}
     const list = root.querySelector('.mp-nllist');
     if (!list || list.dataset.wired) return;
     list.dataset.wired = '1';
+    // Tap a fix to open its detail panel; opening another closes the current one
+    const toggle = (fix) => {
+      const open = !fix.classList.contains('open');
+      list.querySelectorAll('.mp-fix.open').forEach((x) => { x.classList.remove('open'); x.setAttribute('aria-expanded', 'false'); });
+      if (open) { fix.classList.add('open'); fix.setAttribute('aria-expanded', 'true'); }
+    };
+    list.addEventListener('click', (e) => {
+      if (e.target.closest('input, button, textarea')) return;
+      const fix = e.target.closest('.mp-fix');
+      if (fix) toggle(fix);
+    });
+    list.addEventListener('keydown', (e) => {
+      if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('.mp-fix')) { e.preventDefault(); toggle(e.target); }
+    });
     const rows = [...list.querySelectorAll('.mp-nlrow')];
     const hhmmOf = (d) => `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}`;
     const sgnHm = (min) => `${min < 0 ? '-' : '+'}${Z(Math.floor(Math.abs(min) / 60), 2)}:${Z(Math.abs(min) % 60, 2)}`;
