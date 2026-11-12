@@ -226,7 +226,7 @@ ${body}
       if (!idLine) return null;
       let id = idLine.slice(0, 16).trim().toUpperCase();
       if (/T-O-C/.test(id)) id = 'TOC'; else if (/T-O-D/.test(id)) id = 'TOD';
-      const rm = lines.map((l) => /^\s*\*\*\s*(.+?)\s*\*\*\s*$/.exec(l)).filter(Boolean).map((x) => `** ${x[1].replace(/\s+/g, ' ')} **`);
+      const rm = lines.map((l) => /^\s*\*\*\s*(.+?)\s*\*\*\s*$/.exec(l)).filter((x) => x && /[A-Z0-9]/i.test(x[1]) && !/^[*\s]+$/.test(x[1])).map((x) => `** ${x[1].replace(/\s+/g, ' ')} **`);
       const posTable = lines.some((l) => /^\s*POSITION\s+ATA\s+FL/.test(l));
       if (posTable && !rm.some((x) => /POSN RPT/.test(x))) rm.unshift('** POSN RPT **');
       return { id: id.split(/\s+/)[0], rm };
