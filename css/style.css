@@ -135,9 +135,10 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-screen {
   --mp-bg: #0f1c3d; --mp-bar: #1b2c57; --mp-panel: #22386b; --mp-line: #34508f; --mp-blue: #2259d8; --mp-txt: #e9eefb; --mp-dim: #b9c6e6; --mp-teal: #5ee3c4;
   background: var(--mp-bg); color: var(--mp-txt); border-radius: 18px; overflow: hidden;
-  --mp-sans: "Source Sans 3", "Source Sans Pro", -apple-system, "Segoe UI", system-ui, sans-serif;
-  --mp-mono: "Roboto Mono", "SF Mono", Menlo, Consolas, monospace;
-  font: 400 2.2cqw/1.3 var(--mp-sans);
+  /* B612: Airbus's open-source cockpit/EFB typeface (NAVBLUE is an Airbus company) */
+  --mp-sans: "B612", -apple-system, "Segoe UI", system-ui, sans-serif;
+  --mp-mono: "B612 Mono", "SF Mono", Menlo, Consolas, monospace;
+  font: 400 1.95cqw/1.3 var(--mp-sans);
   -webkit-print-color-adjust: exact; print-color-adjust: exact;
 }
 .mp-ico { width: 1.3em; height: 1.3em; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; flex: none; }
@@ -239,7 +240,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-xrow { display: grid; grid-template-columns: 1fr 1fr 1fr 1fr 1fr 1fr .9fr 1fr; padding: .7em 0 .6em; border-top: 1px solid rgba(217,225,242,.35); margin-top: .5em; }
 .mp-xc { padding-left: .4em; min-height: 2.6em; } .mp-xc + .mp-xc { border-left: 1px solid rgba(217,225,242,.35); }
 .mp-xc small { display: block; color: #d9e1f2; font-size: .82em; margin-bottom: .25em; }
-.mp-xc span { font-size: 1em; font-weight: 600; } .mp-xc .mono, .mp-xc b { font: 500 1.15em var(--mp-mono); }
+.mp-xc span { font-size: 1em; font-weight: 700; } .mp-xc .mono, .mp-xc b { font: 700 1.1em var(--mp-mono); }
 .mp-xrmk, .mp-xnote { border-top: 1px solid rgba(217,225,242,.35); padding: .7em .4em; }
 .mp-xrmk small, .mp-xnote small { display: block; color: #d9e1f2; font-size: .82em; margin-bottom: .5em; }
 .mp-xrmk div { padding: .15em .6em; font-weight: 600; }
@@ -249,7 +250,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-fixh b { font-size: 1.05em; } .mp-kb { width: 1.4em; height: 1.4em; }
 .mp-bub { display: inline-flex; padding: .05em .35em; border: 1.5px solid #d9e1f2; border-radius: 6px; } .mp-bub .mp-ico { width: 1.1em; height: 1.1em; }
 .mp-tag { padding: .05em .55em; border: 1.5px solid #d9e1f2; border-radius: 999px; font-size: .8em; font-weight: 600; }
-.mp-nlrow > span { font: 500 1.15em/1 var(--mp-mono); padding-left: .4em; }
+.mp-nlrow > span { font: 700 1.1em/1 var(--mp-mono); padding-left: .4em; }
 .mp-nlrow > span + span { border-left: 1px solid var(--mp-line); }
 .mp-in { width: 94%; padding: .45em .3em; background: #0e1424; color: #fff; border: 2px solid #e9eefb; border-radius: 2px; font: inherit; font-size: .92em; text-transform: uppercase; }
 .mp-in::placeholder { color: #e9eefb; opacity: 1; text-transform: none; }
