@@ -323,8 +323,9 @@ ${body}
   </div>
   <div class="mp-gpsbar" data-flight="${esc(o.requestId || `${o.callsign}-${O.icao}-${D.icao}`)}" data-elev="${num(O.elev) || 0}">
     <span class="mp-gpslbl">Auto ATA</span>
+    <select class="mp-gpssrc" aria-label="Position source"><option value="vatsim">VATSIM</option><option value="simconnect">SimConnect</option></select>
     <input class="mp-gpscs" value="${esc(o.callsign || '')}" placeholder="CALLSIGN" maxlength="10" spellcheck="false" autocomplete="off" aria-label="VATSIM callsign">
-    <button type="button" class="mp-gpsbtn" data-mp-gps aria-pressed="false">VATSIM OFF</button>
+    <button type="button" class="mp-gpsbtn" data-mp-gps aria-pressed="false">OFF</button>
     <span class="mp-gpsst"></span>
   </div>
   <div class="mp-nlcols"><span>RETA</span><span>ETA</span><span>ATA</span><span>TCUM</span><span>PRMG<sup>klb</sup></span><span>ARMG<sup>klb</sup></span><span>PFL</span><span>AFL</span></div>
@@ -471,7 +472,8 @@ ${body}
   };
 
   const VATSIM_URL = 'https://data.vatsim.net/v3/vatsim-data.json';
-  const POLL_MS = 15000;
+  const BRIDGE_URL = 'http://127.0.0.1:47800/position'; // bridge/simbridge.py (SimConnect)
+  const POLL_MS = { vatsim: 15000, simconnect: 2000 };
 
   // Local flat projection in NM around a point (fine for leg-length distances)
   const toXY = (lat, lon, lat0) => ({ x: lon * 60 * Math.cos((lat0 * Math.PI) / 180), y: lat * 60 });
@@ -536,7 +538,7 @@ ${body}
 
     const state = { next: 1, prev: null, lastStamp: '', wasGround: false, started: false };
     const onSample = (p) => {
-      const airborne = p.gs >= 80 || p.alt > elev + 500;
+      const airborne = typeof p.onGround === 'boolean' ? !p.onGround && (p.gs >= 40 || p.alt > elev + 100) : p.gs >= 80 || p.alt > elev + 500;
       if (!state.started) {
         state.started = true;
         state.wasGround = !airborne;
@@ -573,7 +575,25 @@ ${body}
 
     let timer = null;
     const ago = (t) => `${Math.max(0, Math.round((Date.now() - t.getTime()) / 1000))}s ago`;
+    const srcSel = bar.querySelector('.mp-gpssrc');
+    const src = () => srcSel.value;
+    async function pollBridge() {
+      try {
+        const res = await fetch(BRIDGE_URL, { cache: 'no-store' });
+        const data = await res.json();
+        if (!data.connected || !data.position) { st.textContent = `Bridge running · ${data.error || 'waiting for the simulator'}`; st.className = 'mp-gpsst warn'; return; }
+        const q = data.position;
+        const p = { lat: Number(q.lat), lon: Number(q.lon), alt: Number(q.alt), gs: Number(q.gs), onGround: !!q.onGround, t: new Date(q.t || Date.now()) };
+        if (q.t !== state.lastStamp) { state.lastStamp = q.t; onSample(p); }
+        st.textContent = `${data.source === 'demo' ? 'DEMO' : 'SimConnect'} · ${p.onGround ? 'on ground' : `${p.gs} kt · FL${Z(Math.round(p.alt / 100), 3)}`} · ${ago(p.t)}`;
+        st.className = 'mp-gpsst ok';
+      } catch (err) {
+        st.textContent = 'SimConnect bridge not running — start simbridge.exe';
+        st.className = 'mp-gpsst warn';
+      }
+    }
     async function poll() {
+      if (src() === 'simconnect') return pollBridge();
       const cs = csIn.value.trim().toUpperCase();
       if (!cs) { st.textContent = 'enter callsign'; return; }
       try {
@@ -595,13 +615,23 @@ ${body}
       clearInterval(timer); timer = null;
       if (window.__mpGpsTimer) clearInterval(window.__mpGpsTimer);
       btn.setAttribute('aria-pressed', String(on));
-      btn.textContent = on ? 'VATSIM ON' : 'VATSIM OFF';
+      btn.textContent = on ? 'ON' : 'OFF';
       btn.classList.toggle('on', on);
-      try { localStorage.setItem('mp.gpsOn', on ? '1' : ''); localStorage.setItem('mp.gpsCs', csIn.value.trim().toUpperCase()); } catch { /* ignore */ }
-      if (on) { poll(); timer = setInterval(() => { if (!document.body.contains(bar)) { clearInterval(timer); return; } poll(); }, POLL_MS); window.__mpGpsTimer = timer; }
+      try { localStorage.setItem('mp.gpsOn', on ? '1' : ''); localStorage.setItem('mp.gpsCs', csIn.value.trim().toUpperCase()); localStorage.setItem('mp.gpsSrc', src()); } catch { /* ignore */ }
+      if (on) { poll(); timer = setInterval(() => { if (!document.body.contains(bar)) { clearInterval(timer); return; } poll(); }, POLL_MS[src()] || 15000); window.__mpGpsTimer = timer; }
       else { st.textContent = ''; st.className = 'mp-gpsst'; }
     };
     try { const cs = localStorage.getItem('mp.gpsCs'); if (cs && !csIn.value) csIn.value = cs; } catch { /* ignore */ }
+    try { const sv = localStorage.getItem('mp.gpsSrc'); if (sv) srcSel.value = sv; } catch { /* ignore */ }
+    const showCs = () => { csIn.hidden = src() !== 'vatsim'; };
+    showCs();
+    srcSel.addEventListener('change', () => {
+      showCs();
+      Object.assign(state, { prev: null, lastStamp: '' });
+      const on = btn.getAttribute('aria-pressed') === 'true';
+      try { localStorage.setItem('mp.gpsSrc', src()); } catch { /* ignore */ }
+      if (on) setOn(true); else st.textContent = '';
+    });
     btn.addEventListener('click', () => setOn(btn.getAttribute('aria-pressed') !== 'true'));
     csIn.addEventListener('change', () => { if (btn.classList.contains('on')) { Object.assign(state, { next: 1, prev: null, lastStamp: '', started: false }); poll(); } });
     let wasOn = false;

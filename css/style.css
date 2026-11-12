@@ -213,6 +213,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nlsel .mp-ico { width: 1.6em; height: 1.6em; }
 .mp-gpsbar { display: flex; align-items: center; gap: .6em; padding: 0 1.4em .6em; font-size: .85em; color: var(--mp-dim); }
 .mp-gpslbl { font-weight: 600; }
+.mp-gpssrc { padding: .3em .4em; background: #0e1424; color: #fff; border: 1.5px solid var(--mp-line); border-radius: 3px; font: 700 .95em var(--mp-sans); width: auto; }
 .mp-gpscs { width: 8.5em; padding: .3em .5em; background: #0e1424; color: #fff; border: 1.5px solid var(--mp-line); border-radius: 3px; font: 600 1em var(--mp-mono); text-transform: uppercase; }
 .mp-gpsbtn { padding: .35em .8em; border-radius: 999px; border: 1.5px solid var(--mp-line); background: transparent; color: var(--mp-dim); font: 600 .95em var(--mp-sans); cursor: pointer; }
 .mp-gpsbtn.on { border-color: #8fe388; color: #8fe388; }
