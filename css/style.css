@@ -266,6 +266,30 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-etprow b { display: block; font-weight: 600; font-size: 1.12em; color: #fff; line-height: 1.2; }
 .mp-etptext { padding: .9em 1em 1.4em; } .mp-etplbl { font-size: 1.15em; margin-bottom: .8em; }
 .mp-etptext pre { margin: 0; white-space: pre-wrap; font: 600 1em/1.3 var(--mp-sans); color: #fff; }
+/* Flight Information / Flight Additional Information */
+.mp-fih { font-size: 1.1em; font-weight: 700; color: #fff; margin: 1.3em 0 .55em; }
+.mp-fih:first-child { margin-top: 0; }
+.mp-fip { background: #2e3a5c; border-radius: 2px; padding: .9em 1em 1.1em; }
+.mp-fip .g, .mp-fimono .g { color: #8fe388; } .mp-fimono .b { color: #4e86ff; }
+.mp-fik { color: #c9d4ee; }
+.mp-fiv { font: 500 1.08em/1.35 var(--mp-mono); color: #fff; }
+.mp-fi4 { display: grid; grid-template-columns: auto 1.6fr auto 1.4fr; gap: .4em 1.2em; align-items: baseline; }
+.mp-fi2 { display: grid; grid-template-columns: auto 1fr; gap: .35em 1.6em; align-items: baseline; border-radius: 2px 2px 0 0; padding-bottom: .4em; }
+.mp-fisp { height: .8em; }
+.mp-fitimes { display: grid; grid-template-columns: 1.3fr repeat(5, 1fr); gap: .35em .6em; border-radius: 0 0 2px 2px; padding-top: .4em; }
+.mp-fitimes > div { color: #c9d4ee; } .mp-fitimes b { font: 500 1.08em var(--mp-mono); color: #fff; }
+.mp-fitimes b:first-of-type { font-family: var(--mp-mono); }
+.mp-firt { display: grid; grid-template-columns: .7fr 1.2fr 1.4fr 1.6fr; gap: .35em .8em; align-items: baseline; margin-bottom: 1.2em; }
+.mp-firt .l { color: #c9d4ee; } .mp-firt b { font: 500 1.08em var(--mp-mono); color: #fff; } .mp-firt b.s { font: 400 1.05em var(--mp-sans); }
+.mp-fimono { font: 500 1.12em/1.45 var(--mp-mono); color: #fff; word-spacing: .25em; margin-top: .9em; }
+.mp-fisub { color: #c9d4ee; margin: .2em 0 .6em; } .mp-fisub ~ .mp-fisub { margin-top: 1.2em; }
+.mp-fipre { margin: 0; white-space: pre-wrap; font: 500 1.08em/1.45 var(--mp-mono); color: #fff; }
+.mp-fa { background: #4a5574; border-radius: 2px; padding: .5em 1em .8em; margin-bottom: .5em; font-family: Arial, Helvetica, sans-serif; color: #fff; }
+.mp-fah { text-align: center; color: #e6ebf7; margin-bottom: .5em; } .mp-fah.l { text-align: left; padding-left: 30%; }
+.mp-farow { display: flex; gap: 2.5em; padding-left: .5em; } .mp-farow span:first-child { color: #e6ebf7; }
+.mp-fatlw { display: grid; grid-template-columns: auto auto auto auto auto auto; justify-content: start; gap: 0 1.6em; padding-left: 3em; align-items: start; }
+.mp-fatlw span { color: #e6ebf7; } .mp-fatlw b { display: block; font-weight: 600; line-height: 1.25; }
+.mp-fanote { margin-top: .7em; font-size: .92em; color: #e6ebf7; }
 .mp-as { background: #3f4a6b; border-radius: 2px; padding: .7em .6em .9em; }
 .mp-ash { text-align: center; font-size: 1.2em; color: #fff; margin-bottom: .7em; }
 .mp-asrow { display: grid; grid-template-columns: 1.1fr 2.6fr .7fr .9fr 1.1fr 1fr; align-items: start; text-align: center; }

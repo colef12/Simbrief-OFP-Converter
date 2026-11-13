@@ -169,6 +169,8 @@
     }).join('');
     const docs = {};
     if (m.etops) docs['inflight:etops'] = { title: 'ETOPS', html: etopsPage(m) };
+    docs['prep:finfo'] = { title: 'Flight Information', html: flightInfoPage(m) };
+    docs['prep:faddl'] = { title: 'Flight Additional Information', html: flightAddlPage(m) };
     return {
       ...docs,
       'inflight:altsum': {
@@ -182,6 +184,153 @@
       },
     };
   }
+  // Flt Prep > Flight Information (per Cole's DAL0183 LIRF-KJFK photos)
+  function flightInfoPage(m) {
+    const { o } = m;
+    const ofp = o.raw, g = o.general, ac = ofp.aircraft || {}, s = o.settings || {};
+    const O = o.origin || {}, D = o.dest || {}, A = o.alts[0];
+    const d3 = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${Z(d.getUTCFullYear() % 100, 2)}` : '-');
+    const fltNum = up(g.flight_number).replace(/\D/g, '');
+    const iataAl = up(g.iata_airline);
+    const port = (p) => (p ? [p.icao, p.iata || p.code, p.name].filter(Boolean).join(' / ') : '-');
+    const lt2 = (d, tz) => lt(d, tz) || '-';
+    const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    // performance factor e.g. "P2.7" / "+2.7" / "-1.0" -> "+02.7%"
+    const pfRaw = str(ac.fuelfact ?? ac.fuelfactor ?? ac.perf_factor);
+    const pfm = /^([PM+-]?)\s*(\d+(?:\.\d+)?)/i.exec(pfRaw);
+    const pf = pfm ? `${/^[M-]/i.test(pfm[1]) ? '-' : '+'}${Number(pfm[2]).toFixed(1).padStart(4, '0')}%` : '-';
+    // speeds
+    const ci = str(g.costindex);
+    const spd = (p) => { const v = up(p); return /^CI/.test(v) ? v.replace(/\s+/g, '') : v || '-'; };
+    const cruise = /CI/.test(up(g.cruise_profile)) || !str(g.cruise_profile) ? (ci ? `CI${ci}` : '-') : up(g.cruise_profile);
+    // TOC data
+    const toc = o.navlog.find((x) => up(x.ident) === 'TOC');
+    const tocWind = toc && str(toc.wind_dir) !== '' ? `${Z(Math.round(num(toc.wind_dir)), 3)}/${Z(Math.round(num(toc.wind_spd)), 3)}` : '-';
+    const tocOat = toc && str(toc.oat) !== '' ? String(Math.round(num(toc.oat))) : '-';
+    // route string: fixes white, airways / DCT / SID / STAR green
+    const isAwy = (t) => t === 'DCT' || /^NAT[A-Z]$/.test(t) || /^[A-Z]{1,3}\d{1,4}[A-Z]?$/.test(t) || /^[A-Z]{3,6}\d[A-Z]?$/.test(t);
+    const toks = up(g.route).split(/\s+/).filter(Boolean).map((t) => t.replace(/\/.*$/, ''));
+    const route = [O.icao, ...toks, D.icao].filter(Boolean)
+      .map((t, i, a) => (i > 0 && i < a.length - 1 && isAwy(t) ? `<span class="g">${esc(t)}</span>` : esc(t))).join(' ');
+    // initial level + step climbs (fix where the new level starts)
+    const steps = [];
+    const fl0 = num(g.initial_altitude);
+    if (fl0) steps.push([O.icao, Math.round(fl0 / 100)]);
+    let cur = fl0, past = false;
+    o.navlog.forEach((f, i, a) => {
+      if (up(f.ident) === 'TOC') { past = true; return; }
+      if (up(f.ident) === 'TOD') past = false;
+      const alt = num(f.altitude_feet);
+      if (past && alt && cur && Math.abs(alt - cur) >= 1000 && up(f.ident) !== 'TOD') {
+        const prev = a[i - 1] && !['TOC', 'TOD'].includes(up(a[i - 1].ident)) ? a[i - 1] : f;
+        steps.push([up(prev.ident), Math.round(alt / 100)]);
+        cur = alt;
+      }
+    });
+    const stepHtml = steps.map(([fx, fl]) => `${esc(fx)}/<span class="b">FL${Z(fl, 3)}</span>`).join('  ');
+    // ATC flight plan remarks: equipment line + item 18 + field elevations
+    const fpl = str(ofp.atc?.flightplan_text).replace(/[()]/g, '');
+    const segs = fpl.split(/\s*\n?-\s*(?=[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
+    const item10 = segs.find((x) => /^[A-Z0-9]{2,4}\/[LMHJ]-\S+/.test(x)) || (o.icaoType && ac.equip ? `${o.icaoType}/${up(ac.wake || 'M')}-${up(ac.equip)}` : '');
+    const item18 = str(ofp.atc?.section18) || segs.filter((x) => /^[A-Z]{2,4}\//.test(x) && !/^[A-Z0-9]{2,4}\/[LMHJ]-/.test(x)).pop() || '';
+    const wrap = (txt, w = 55) => {
+      const out = []; let line = '';
+      up(txt).replace(/\s+/g, ' ').trim().split(' ').forEach((wd) => {
+        if (line && (line + ' ' + wd).length > w) { out.push(line); line = wd; } else line = line ? `${line} ${wd}` : wd;
+      });
+      if (line) out.push(line);
+      return out;
+    };
+    const elevs = [O, D].filter((p) => p && p.icao).map((p) => `${p.iata || p.code}/${p.icao} ${Math.round(p.elev || 0)} FT`).join(' ');
+    const atcLines = ['IFR ICAO FLIGHT PLAN', `SHIP ${o.fleet} ${up(item10.split(/\s+/)[0] || '')}`.trim(), ...wrap(item18), elevs ? `ELEVATION  ${elevs}` : ''].filter(Boolean);
+    const mel = str(s.mpMel).split(/\n/).map((x) => x.trim()).filter(Boolean);
+    const melLines = [`MEL ITEMS FOR SHIP NUMBER ${o.fleet}`, ...(mel.length ? mel.flatMap((x, i) => wrap(`${Z(i + 1, 2)} ${x}`, 60)) : ['NIL'])];
+    const kv = (k, v) => `<div class="mp-fik">${esc(k)}</div><div class="mp-fiv">${v}</div>`;
+    return `
+      <div class="mp-fih">Flight Plan Reference</div>
+      <div class="mp-fip mp-fi4">
+        ${kv('Release', `${esc(o.release)}.0`)}${kv('Generated', esc(zt(o.generated)))}
+        ${kv('Dispatcher', esc(up(s.mpDispatcher) || up(ofp.crew?.dx) || '-'))}${kv('Tel/Desk', esc(up(s.mpDeskTel) || up(s.dispatchDesk) || '-'))}
+      </div>
+      <div class="mp-fih">Flight Information</div>
+      <div class="mp-fip mp-fi2">
+        ${kv('Flight Origin Date', esc(d3(m.sOut)))}
+        ${kv('Flight No', `${esc(o.airline)}${esc(Z(fltNum || 0, 4))}${iataAl ? `<br>${esc(iataAl)}${esc(fltNum)}` : ''}`)}
+        ${kv('From', esc(port(O)))}${kv('To', esc(port(D)))}${kv('Alternate', esc(port(A)))}
+        ${m.etops ? kv('ETOPS (MIN)', esc(str(m.etops.rule) || '-')) : ''}
+        <div class="mp-fisp"></div><div></div>
+        ${kv('SELCAL', esc(up(ac.selcal) || '-'))}${kv('ATC Call Sign', esc(o.callsign))}
+        ${kv('ACARS Use', esc(`${Z(fltNum || 0, 4)}/${m.sOut ? Z(m.sOut.getUTCDate(), 2) : '--'}`))}
+      </div>
+      <div class="mp-fip mp-fitimes">
+        <div></div><div>STD</div><div>ETD</div><div>STA</div><div>ETA</div><div>ETE</div>
+        <b>${esc(d3(m.sOut))}</b><b>${esc(zt(m.sOut))}</b><b>${esc(zt(m.eOut))}</b><b>${esc(zt(m.sIn))}</b><b>${esc(zt(m.eIn))}</b><b class="g">${m.air ? esc(hmm(m.air)) : '-'}</b>
+        <div>Local Time</div><b>${esc(lt2(m.sOut, m.tzO))}</b><b>${esc(lt2(m.eOut, m.tzO))}</b><b>${esc(lt2(m.sIn, m.tzD))}</b><b>${esc(lt2(m.eIn, m.tzD))}</b><b></b>
+      </div>
+      <div class="mp-fih">Aircraft Information</div>
+      <div class="mp-fip mp-fi4">
+        ${kv('Registration', `${esc(o.reg)}<br>${esc(o.icaoType)}`)}${kv('Performance Factor', esc(pf))}
+        ${kv('Ship number', esc(o.fleet))}<div></div><div></div>
+      </div>
+      <div class="mp-fih">Route Information</div>
+      <div class="mp-fip">
+        <div class="mp-firt">
+          <div class="mp-fik">Speed:</div><div class="l">Climb</div><div class="l">Cruise</div><div class="l">Descent</div>
+          <div></div><b>${esc(spd(g.climb_profile))}</b><b>${esc(cruise)}</b><b>${esc(spd(g.descent_profile))}</b>
+          <div class="mp-fik">Route:</div><div class="l">TOC Wind</div><div class="l">TOC Temp (°C)</div><div class="l">Ground Distance (NM)</div>
+          <div></div><b class="s">${esc(tocWind)}</b><b class="s">${esc(tocOat)}</b><b class="s">${num(g.route_distance) ? Math.round(num(g.route_distance)) : '-'}</b>
+          <div></div><div></div><div class="l">Company Route</div><div></div>
+          <div></div><div></div><b class="s">${esc(up(g.route_name) || '-')}</b><div></div>
+        </div>
+        <div class="mp-fimono">${route}</div>
+        ${stepHtml ? `<div class="mp-fimono">${stepHtml}</div>` : ''}
+      </div>
+      <div class="mp-fih">Remarks</div>
+      <div class="mp-fip">
+        <div class="mp-fisub">ATC Flight Plan</div>
+        <pre class="mp-fipre">${esc(atcLines.join('\n'))}</pre>
+        <div class="mp-fisub">MEL/CDL Information</div>
+        <pre class="mp-fipre">${esc(melLines.join('\n'))}</pre>
+      </div>`;
+  }
+
+  // Flt Prep > Flight Additional Information: operation type + target landing window
+  function flightAddlPage(m) {
+    const from = m.eOn ? new Date(m.eOn.getTime() - 4 * 60000) : null;
+    const loc = (d) => (d && m.tzD != null ? lt(d, m.tzD).replace('(L)', 'L') : '');
+    const t = (d) => `<b>${esc(zt(d))}</b><b>${esc(loc(d))}</b>`;
+    return `
+      <div class="mp-fa">
+        <div class="mp-fah">Flight Operation Type</div>
+        <div class="mp-farow"><span>Operation Type:</span><span>${m.intl ? 'FLAG' : 'DOMESTIC'}</span></div>
+      </div>
+      <div class="mp-fa">
+        <div class="mp-fah l">Target Landing Window</div>
+        <div class="mp-fatlw">
+          <span>From</span><div>${t(from)}</div><span>Until</span><div>${t(m.eOn)}</div>
+          <span>Landing*</span><div class="mp-faldg" data-on="${m.eOn ? m.eOn.getTime() : ''}" data-off="${m.eOff ? m.eOff.getTime() : ''}" data-tz="${m.tzD ?? ''}">${t(m.eOn)}</div>
+        </div>
+        <div class="mp-fanote">*: Landing time estimated from T/Off time.</div>
+      </div>`;
+  }
+
+  // "Landing*" on Flight Additional Information follows the departure (T/Off) time on the Nav Log
+  function liveLanding(screen, body) {
+    const el = body.querySelector('.mp-faldg');
+    if (!el || !el.dataset.on || !el.dataset.off) return;
+    const v = screen.querySelector('.mp-nlrow input[data-k$=":ata"]')?.value || '';
+    const mt = /^([01]\d|2[0-3]):?([0-5]\d)$/.exec(v.trim());
+    if (!mt) return;
+    const off = Number(el.dataset.off);
+    const d = new Date(off); d.setUTCHours(+mt[1], +mt[2], 0, 0);
+    if (d - off > 12 * 3600e3) d.setTime(d - 86400e3); else if (d - off < -12 * 3600e3) d.setTime(+d + 86400e3);
+    const ldg = new Date(Number(el.dataset.on) + (d - off));
+    const hm = (x) => `${Z(x.getUTCHours(), 2)}:${Z(x.getUTCMinutes(), 2)}`;
+    const b = el.querySelectorAll('b');
+    b[0].textContent = `${hm(ldg)}Z`;
+    if (el.dataset.tz !== '' && b[1]) b[1].textContent = `${hm(new Date(ldg.getTime() + Number(el.dataset.tz) * 3600e3))}L`;
+  }
+
   // ETOPS page: Diversion Information, ETOPS Positions Detail (per ETP), and the OFP's ETP text
   function etopsPage(m) {
     const { o } = m;
@@ -581,7 +730,7 @@ ${body}
         dv.querySelector('.mp-dvt').textContent = tpl?.dataset.title || (label ? label.childNodes[0].textContent.trim() : '');
         const body = dv.querySelector('.mp-dvb');
         body.replaceChildren();
-        if (tpl) body.appendChild(tpl.content.cloneNode(true));
+        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(screen, body); }
         else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
         dv.hidden = false;
         dv.scrollTop = 0;
