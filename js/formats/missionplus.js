@@ -94,7 +94,7 @@
       air: secs(t.est_time_enroute),
       intl: o.origin && o.dest && o.origin.icao[0] !== o.dest.icao[0],
       etops: (ofp.general?.is_etops === '1' || ofp.general?.is_etops === true || !!ofp.etops?.equal_time_point) ? (ofp.etops || {}) : null,
-      tracks: asArray(ofp.tracks?.nat),
+      tracks: (Object.values(ofp.tracks?.nat_notams || {}).some((x) => str(x)) || asArray(ofp.tracks?.nat).length || /\bNAT[A-Z]\b/.test(up(ofp.general?.route))) ? [1] : [],
       fuel: {
         tow: W(w.est_tow), ldw: W(w.est_ldw), block: W(f.plan_ramp), minTo,
         toc: toc ? W(toc.fuel_plan_onboard) : 0, planLdg, minLdg, delay: Math.max(0, planLdg - minLdg),
@@ -112,7 +112,7 @@
   // [icon, label, page, drawer]
   const TABS = [
     ['home', 'Dashboard', 'dashboard'], ['prep', 'Flt Prep', null, 'prep'], ['plane', 'In Flight', null, 'inflight'], ['list', 'Nav Log', 'navlog'],
-    ['folder', 'NOTAM', null, 'notam'], ['wx', 'Weather', null, 'wx'], ['folder', 'Other Docs', null, 'docs'], ['post', 'Post Flight'], ['more', 'Others'],
+    ['folder', 'NOTAM', null, 'notam'], ['wx', 'Weather', null, 'wx'], ['folder', 'Other Docs', null, 'docs'], ['post', 'Post Flight', null, 'post'], ['more', 'Others', null, 'others'],
   ];
 
   // Tab drawers, as in the real app. [id, label, icon xml|txt|img, unread by default, sub-label]
@@ -130,6 +130,7 @@
         ['LATT Calculation', [['fdplatt', 'FDP LATT', 'xml', 1], ['blklatt', 'Block LATT', 'xml', 1]]],
         ['In Flight Deck', [['fmsinit', 'FMS Initialization', 'xml', 0]]],
         ['Crew Information', [['crewlist', 'Crew List', 'xml', 1], ['crewconn', 'Crew Connections', 'xml', 1]]],
+        ...(m.air > 5 * 3600 ? [['Crew Rest Calculation', [['rest', 'Rest Context and Settings', 'xml', 0], ['rest3', 'Three Pilots Planning', 'xml', 0], ['rest4', 'Four Pilots Planning', 'xml', 0]]]] : []),
       ],
       inflight: [
         ['Enroute', [['enrinfo', 'Enroute Information', 'xml', 1], ['altsum', 'Alternates Summary', 'xml', 1], ...(m.etops ? [['etops', 'ETOPS', 'xml', 0]] : [])]],
@@ -146,8 +147,11 @@
       ],
       docs: [
         ['Dispatch Information', [['fpadd', 'Flight Plan Addendum', 'txt', 1]]],
+        ['Legacy Flight Briefing', [['cbp', 'CBP', 'txt', 0]]],
         ['Help', [['aboutfp', 'About Flight Plan', 'xml', 0], ['aboutwx', 'About Airport Weather', 'xml', 0]]],
       ],
+      post: [['', [['!close', 'Close Flight', 'act', 0], ['!pfr', 'Send PFR & Close', 'act', 0]]]],
+      others: [['Obsolete', [['~', 'No obsolete documents', 'note', 0]]], ['Trash', [['~', 'Trash is empty', 'note', 0]]]],
     };
   }
 
@@ -166,7 +170,7 @@
           <div class="c-dist"><b>${num(r.distance) ? Math.round(num(r.distance)) : '-'}</b><b class="nm">${esc(a.name || '')}</b></div>
           <div><b>${esc(fl)}</b></div>
           <div><b>${ete ? esc(hmm(ete)) : '-'}</b></div>
-          <div><b class="g">${eta ? `${esc(zt(eta))}` : '-'}</b></div>
+          <div>${dynZ(eta)}</div>
           <div><b>${str(r.burn) ? o.W(r.burn) : '-'}</b></div>
         </div>`;
     }).join('');
@@ -174,14 +178,53 @@
     if (m.etops) docs['inflight:etops'] = { title: 'ETOPS', html: etopsPage(m) };
     docs['prep:finfo'] = { title: 'Flight Information', html: flightInfoPage(m) };
     const O = o.origin, D = o.dest;
-    const enr = asArray(o.raw.notams?.notamdrec);
+    const nAll = Array.isArray(o.raw.notams) ? o.raw.notams : asArray(o.raw.notams?.notamdrec);
+    const known = new Set([O, D, ...o.alts].filter(Boolean).flatMap((p) => p.notams.map((n) => up(n.notam_id))));
+    const enr = nAll.filter((n) => n && !known.has(up(n.notam_id)));
     const altSecs = o.alts.filter(Boolean).map((a) => ({ title: 'Alternate Airport', port: a, list: a.notams }));
-    const enrSec = enr.length ? [{ title: 'Enroute', port: null, list: enr }] : [];
+    const byLoc = {};
+    enr.forEach((n) => { const k = up(n.icao_id || n.location_icao || n.cns_location_id) || 'ENROUTE'; (byLoc[k] = byLoc[k] || []).push(n); });
+    const enrSec = Object.keys(byLoc).map((k) => ({ title: 'Enroute', port: null, list: byLoc[k] }));
     docs['notam:onotam'] = { title: 'Origin NOTAMs', kind: 'notam', html: notamPage(m, [{ title: 'Origin Airport', port: O, list: O?.notams || [] }]) };
     docs['notam:aenotam'] = { title: 'Alternate & Enroute NOTAMs', kind: 'notam', html: notamPage(m, [...altSecs, ...enrSec]) };
     docs['notam:dnotam'] = { title: 'Destination NOTAMs', kind: 'notam', html: notamPage(m, [{ title: 'Destination Airport', port: D, list: D?.notams || [] }]) };
     docs['notam:allnotam'] = { title: 'All NOTAMs', kind: 'notam', html: notamPage(m, [
       { title: 'Origin Airport', port: O, list: O?.notams || [] }, { title: 'Destination Airport', port: D, list: D?.notams || [] }, ...altSecs, ...enrSec]) };
+    Object.assign(docs, {
+      'prep:fdra': { title: 'FDRA', html: fdraPage(m) },
+      'prep:loadfuel': { title: 'Load & Fuel', html: loadFuelPage(m) },
+      'prep:lfrmk': { title: 'Load & Fuel Remarks', html: lfRemarksPage(m) },
+      'prep:fprmk': { title: 'Flight Plan Remarks', html: fpRemarksPage(m) },
+      'prep:corm': { title: 'Company Remarks', html: companyRemarksPage(m) },
+      'prep:adr': { title: 'Aircraft Discrepancy Report', html: adrPage(m) },
+      'prep:gate': { title: 'Gate Message', html: gatePage(m) },
+      'prep:fdplatt': { title: 'FDP LATT', html: fdpLattPage(m) },
+      'prep:blklatt': { title: 'Block LATT', html: blockLattPage(m) },
+      'prep:crewlist': { title: 'Crew List', html: crewListPage(m) },
+      'prep:crewconn': { title: 'Crew Connections', html: crewConnPage(m) },
+      'inflight:enrinfo': { title: 'Enroute Information', html: enrInfoPage(m) },
+      'wx:owx': { title: 'Origin METAR & TAF', html: wxPage(m, 'o') },
+      'wx:ewx': { title: 'Enroute METAR & TAF', html: wxPage(m, 'e') },
+      'wx:dwx': { title: 'Destination METAR & TAF', html: wxPage(m, 'd') },
+      'wx:awx': { title: 'Alternates METAR & TAF', html: wxPage(m, 'a') },
+      'wx:atis': { title: 'ATIS', html: atisPage(m) },
+      'wx:winds': { title: 'Forecasted Winds & Temp', html: windsPage(m) },
+      'wx:fieldc': { title: 'Field Conditions', html: fieldCondPage(m) },
+      'wx:tp': { title: 'Threat Plots', html: threatPage(m) },
+      'wx:tpfcst': { title: 'U.S. Fcst TPs', html: imgDocPage() },
+      'wx:tpcur': { title: 'U.S. Current TPs', html: imgDocPage() },
+      'wx:tpcurf': { title: 'U.S. Curr Fcst TPs', html: imgDocPage() },
+      'docs:fpadd': { title: 'Flight Plan Addendum', html: addendumPage(m) },
+      'docs:cbp': { title: 'CBP', html: cbpPage(m) },
+      'docs:aboutfp': { title: 'About Flight Plan', html: aboutFpPage() },
+      'docs:aboutwx': { title: 'About Airport Weather', html: aboutWxPage() },
+    });
+    if (m.tracks.length) docs['inflight:oceanic'] = { title: 'Oceanic Tracks', html: oceanicPage(m) };
+    if (m.air > 5 * 3600) {
+      docs['prep:rest'] = { title: 'Rest Context and Settings', html: restPage(m, 'ctx') };
+      docs['prep:rest3'] = { title: 'Three Pilots Planning', html: restPage(m, 'three') };
+      docs['prep:rest4'] = { title: 'Four Pilots Planning', html: restPage(m, 'four') };
+    }
     docs['prep:fmsinit'] = { title: 'FMS Initialization', html: fmsInitPage(m) };
     docs['prep:faddl'] = { title: 'Flight Additional Information', html: flightAddlPage(m) };
     return {
@@ -330,6 +373,20 @@
   // priority ring + ⋮ menu (Undefined/Low/Medium/High), bookmark, blue bar while unviewed.
   const NOTAM_BOLD = /\b(AD|RWY|TWY|ILS|LOC|RNAV|VNAV|VOR|DME|NDB|CRANES?|OBST|APN|TACAN)\b/g;
   const NOTAM_WARN = /(U\/S|\bINOP\b|\bCLSD\b|\bUNSERVICEABLE\b)/g;
+  // Enroute (FIR) NOTAMs come in ICAO format with their own field names: normalize to the airport shape
+  function nrmNotam(n) {
+    if (n.date_effective || !n.notam_effective_dtg) return n;
+    const iso = (v) => { const d = dtg(v); return d ? d.toISOString() : ''; };
+    const raw = str(n.notam_text);
+    const e = /\bE\)\s*([\s\S]*?)(?=\n\s*[FG]\)|\s*$)/.exec(raw);
+    const q = /Q\)\s*\w+\/(Q\w{4})/.exec(raw);
+    return {
+      ...n, notam_text: e ? e[1].trim() : raw, location_icao: n.icao_id || n.cns_location_id,
+      date_effective: iso(n.notam_effective_dtg), date_expire: iso(n.notam_expire_dtg || n.notam_expire_dtg_estimated),
+      date_expire_is_estimated: !n.notam_expire_dtg && !!n.notam_expire_dtg_estimated, date_created: iso(n.notam_created_dtg),
+      notam_qcode: n.notam_qcode || (q ? q[1] : ''),
+    };
+  }
   function notamPage(m, sections) {
     const DAY = 86400e3;
     const nd = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()} ${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}` : '');
@@ -374,7 +431,7 @@
     };
     let total = 0;
     const secHtml = sections.map((sec) => {
-      const list = asArray(sec.list).filter((n) => n && (str(n.notam_text) || str(n.notam_raw)));
+      const list = asArray(sec.list).filter((n) => n && (str(n.notam_text) || str(n.notam_raw))).map(nrmNotam);
       total += list.length;
       const general = [], byRwy = {};
       list.forEach((n) => {
@@ -555,6 +612,694 @@
   }
 
 
+  // ===================================================================================================
+  // Documents built from the Mission+ v2.3.0 User Guide (Feb 2026) where no photo was available.
+  // ===================================================================================================
+  const hmS = (sec) => { if (sec == null || Number.isNaN(sec)) return ''; const mn = Math.round(Math.abs(sec) / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+  // A time that follows the Nav Log (white = plan, green = revised by an ATA): see liveDocs()
+  const dynZ = (d, cls = '') => (d ? `<b class="${cls}" data-dyn="${d.getTime()}">${esc(zt(d))}</b>` : '<b>-</b>');
+  const txtDoc = (lines) => `<pre class="mp-txt">${esc(lines.filter((x) => x != null).join('\n'))}</pre>`;
+  const pnl = (title, inner, cls = '') => `<div class="mp-pn ${cls}">${title ? `<div class="mp-pnh">${title}</div>` : ''}${inner}</div>`;
+  const wrapTxt = (txt, w = 64) => {
+    const out = [];
+    String(txt || '').split('\n').forEach((para) => {
+      let line = '';
+      para.replace(/\s+/g, ' ').trim().split(' ').forEach((wd) => {
+        if (line && `${line} ${wd}`.length > w) { out.push(line); line = wd; } else line = line ? `${line} ${wd}` : wd;
+      });
+      out.push(line);
+    });
+    return out;
+  };
+  const dtg = (v) => { const mt = /^(\d{4})(\d{2})(\d{2})(\d{2})(\d{2})$/.exec(str(v)); return mt ? new Date(Date.UTC(+mt[1], +mt[2] - 1, +mt[3], +mt[4], +mt[5])) : null; };
+  const ddMon = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]}` : '');
+
+  // ---------------- Flt Prep > Load & Fuel (guide 4.2.4) ----------------
+  function loadFuelPage(m) {
+    const { o } = m;
+    const f = o.fuel, w = o.wts, t = o.times, W = o.W;
+    const A = o.alts[0], D = o.dest || {};
+    const altRaw = asArray(o.raw.alternate)[0] || {};
+    const n = (v) => (str(v) === '' ? '-' : String(W(v)));
+    const loading = [
+      ['Passengers', String(Math.round(num(w.pax_count)))],
+      ['Cargo', n(w.cargo)],
+      ['Zero Fuel Weight', n(w.est_zfw)],
+      ['Ramp Weight', String(W(w.est_zfw) + W(f.plan_ramp))],
+      ['Block Fuel', n(f.plan_ramp), 'g'],
+      ['Taxi Out', n(f.taxi)],
+      ['Min Fuel for T/O', String(m.fuel.minTo), 'g'],
+      ['Takeoff Gross Wt', n(w.est_tow)],
+      ['Trip Fuel', n(f.enroute_burn)],
+      ['FMS Reserve Fuel', String(m.fuel.minLdg)],
+      ['Landing Weight', n(w.est_ldw)],
+      ['Landing Fuel', n(f.plan_landing)],
+    ];
+    const resMin = Math.round(secs(t.reserve_time) / 60);
+    const extras = asArray(o.raw.fuel_extra?.bucket).filter((b) => num(b.fuel) > 0);
+    const rows = [
+      ['Trip', D.icao, n(f.enroute_burn), hmS(secs(t.est_time_enroute)), ''],
+      ['Contingency Fuel', '', n(f.contingency), hmS(secs(t.contfuel_time)), str(o.general.cont_rule) ? `CONT ${up(o.general.cont_rule)}` : ''],
+      ['Alternate', A?.icao || '', A ? n(f.alternate_burn) : '', A ? hmS(secs(altRaw.ete)) : '', ''],
+      ['Reserve', '', n(f.reserve), hmS(secs(t.reserve_time)), resMin ? `-${resMin} MIN HOLD AT ${A ? 'ALTN' : 'DEST'}` : ''],
+      ['Minimum Reserve', '', '', '', ''],
+      ...(num(f.etops) > 0 ? [['ETOPS Fuel', '', n(f.etops), hmS(secs(t.etopsfuel_time)), 'ETOPS CRITICAL FUEL']] : []),
+      ['Discrnry Cont Fuel', '', n(f.extra), num(f.extra) ? hmS(secs(t.extrafuel_time)) : '', extras.map((b) => up(b.label)).join(' / ')],
+      ['Take Off Fuel', '', n(f.plan_takeoff), '', '', 'b'],
+      ['Taxi Out', '', n(f.taxi), hmS(secs(t.taxi_out)), ''],
+      ['Fuel Required To Dest', '', n(f.plan_ramp), '', ''],
+      ['Block Fuel', '', n(f.plan_ramp), '', '', 'b'],
+      ['Plan T/O Fuel', '', n(f.plan_takeoff), '', ''],
+      ['Plan Landing Fuel', '', n(f.plan_landing), '', '', 'g'],
+      ['Min Lndg Fuel at Dest', '', String(m.fuel.minLdg), '', ''],
+      ['Available Delay Fuel', '', String(m.fuel.delay), num(f.avg_fuel_flow) ? hmS((m.fuel.delay / W(f.avg_fuel_flow)) * 3600) : '', ''],
+      ['Taxi In', D.icao, '', hmS(secs(t.taxi_in)), ''],
+    ];
+    return `
+      ${pnl('Aircraft Loading', `<table class="mp-lf"><tr><th></th><th>Planned<br>(lb)</th></tr>${loading.map(([k, v, c]) => `<tr><td>${k}</td><td class="${c || ''}">${esc(v)}</td></tr>`).join('')}</table>`)}
+      ${pnl('Mission Fueling', `<table class="mp-lf mp-lf2"><tr><th></th><th></th><th>Planned<br>(lb)</th><th>Time</th><th class="l">Information</th></tr>${rows.map(([k, code, v, tm, info, c]) => `
+        <tr class="${c === 'b' ? 'b' : ''}"><td>${k}</td><td class="code">${esc(code)}</td><td class="${c === 'g' ? 'g' : ''}">${esc(v)}</td><td>${esc(tm)}</td><td class="l">${esc(info)}</td></tr>`).join('')}</table>`)}`;
+  }
+
+  // ---------------- Flt Prep > FDRA "To Sign" (guide 4.2.1): pilot info + accept, then Flight Information + Load & Fuel
+  function fdraPage(m) {
+    const { o } = m;
+    const lastFirst = (nm) => { const p = up(nm).split(/\s+/).filter(Boolean); return p.length > 1 ? `${p.slice(1).join(' ')} ${p[0]}` : p[0] || ''; };
+    const names = m.crewDeck.map((c) => ({ n: lastFirst(c.name), e: c.emp }));
+    return `
+      <div class="mp-fdra">
+        <div class="mp-fdrah"><span class="mp-fih">Pilot Information</span><button type="button" class="mp-btn mp-accept">ACCEPT</button></div>
+        <div class="mp-fip">
+          <div class="mp-fdrag">
+            <label>Name *<select data-fdra="name">${names.map((x) => `<option value="${esc(x.n)}" data-emp="${esc(x.e)}">${esc(x.n)}</option>`).join('')}<option value="">+ Add New Item</option></select>
+              <input data-fdra="newname" placeholder="LAST FIRST" hidden></label>
+            <label>Staff No<input data-fdra="staff" value="${esc(names[0]?.e || '')}" inputmode="numeric"></label>
+          </div>
+          <p class="mp-fdrat"><b>CAPTAIN(S)</b><br>By accepting, the captain confirms review of this release, the weather and NOTAMs for the departure, destination and alternate airports, and any special airport qualification required for this flight, and agrees the flight can be operated safely as planned.</p>
+          <p class="mp-fdrat"><b>FIRST OFFICER(S)</b><br>By accepting, the first officer confirms review of this release.</p>
+          <p class="mp-fdrat">Each pilot also confirms being fit for duty for this flight.</p>
+          <p class="mp-fdrat">BY TAPPING ACCEPT, I AGREE WITH AND ACCEPT THE ABOVE STATEMENT</p>
+          <div class="mp-fdras" hidden></div>
+        </div>
+        ${flightInfoPage(m)}
+        <div class="mp-fih">Load &amp; Fuel</div>${loadFuelPage(m)}
+      </div>`;
+  }
+
+  // ---------------- Flt Prep > remarks / text documents ----------------
+  const remList = (v) => asArray(v).map(str).filter((x) => x && up(x) !== 'NONE');
+  function lfRemarksPage(m) {
+    const { o } = m;
+    const f = o.fuel, W = o.W;
+    const ex = asArray(o.raw.fuel_extra?.bucket).filter((b) => num(b.fuel) > 0);
+    return txtDoc([
+      'LOAD AND FUEL REMARKS', '',
+      `PAYLOAD ${W(o.wts.payload)} LB   MAX PAYLOAD ${C.maxPayload(o)} LB`,
+      `PAX ${Math.round(num(o.wts.pax_count))}   BAGS ${Math.round(num(o.wts.bag_count))}   CARGO ${W(o.wts.cargo)} LB`,
+      '',
+      'DISCRETIONARY FUEL',
+      ...(ex.length ? ex.map((b) => `  ${C.L(up(b.label), 12)} ${C.L(String(W(b.fuel)), 8)} LB  ${hmS(num(b.time) * 60)}`) : ['  NIL']),
+      '',
+      num(f.extra_optional) > 0 ? `TANKERING/OPTIONAL FUEL ${W(f.extra_optional)} LB` : 'NO TANKERING PLANNED',
+      `MAX TANKS ${W(f.max_tanks)} LB   AVG FUEL FLOW ${W(f.avg_fuel_flow)} LB/HR`,
+    ]);
+  }
+  function fpRemarksPage(m) {
+    const { o } = m;
+    const dx = remList(o.general.dx_rmk);
+    const mel = str(o.settings.mpMel).split('\n').map((x) => x.trim()).filter(Boolean);
+    const sec = (t, lines) => `<div class="mp-fisub">${esc(t)}</div><pre class="mp-fipre">${esc(lines.join('\n'))}</pre>`;
+    return pnl('', [
+      sec('Dispatcher Remarks', dx.length ? dx.flatMap((x) => wrapTxt(up(x))) : ['NIL']),
+      sec('ATC Flight Plan', [str(o.atc.flightplan_text) || 'NOT AVAILABLE']),
+      sec('MEL', mel.length ? mel.map(up) : ['MEL-CDL NIR']),
+      sec('Gate Info', [`ARR GATE ${o.dest?.icao || ''} TBA`]),
+    ].join(''));
+  }
+  function companyRemarksPage(m) {
+    const { o } = m;
+    const sys = remList(o.general.sys_rmk);
+    const ports = [o.origin, o.dest, ...o.alts].filter(Boolean);
+    return txtDoc([
+      'COMPANY REMARKS', '',
+      'FLIGHT OPERATIONS AND MAINTENANCE REMARKS',
+      ...(sys.length ? sys.flatMap((x) => wrapTxt(up(x))) : ['  NIL']), '',
+      `CITY PAIR REMARKS ${o.origin?.icao || ''}-${o.dest?.icao || ''}`, '  NIL', '',
+      'AIRPORT REMARKS', ...ports.map((p) => `  ${p.icao}: NIL`), '',
+      'WAYPOINT NOTAMS', '  NIL',
+    ]);
+  }
+  function adrPage(m) {
+    const { o } = m;
+    const mel = str(o.settings.mpMel).split('\n').map((x) => x.trim()).filter(Boolean);
+    return txtDoc([
+      'AIRCRAFT DISCREPANCY REPORT', '',
+      `SHIP ${o.fleet}   REG ${o.reg}   TYPE ${o.icaoType}`,
+      `AS OF ${ddMon(o.generated)} ${zt(o.generated)}`, '',
+      'MEL:', ...(mel.length ? mel.map((x, i) => `  ${Z(i + 1, 2)} ${up(x)}`) : ['  NIL']),
+      'CDL:', '  NIL', 'NEF:', '  NIL', 'SPL:', '  NIL',
+    ]);
+  }
+  const gatePage = () => txtDoc(['NO GATE MESSAGE']);
+
+  // ---------------- Flt Prep > Crew List / Crew Connections (guide 4.2.14-15) ----------------
+  function crewPilots(m) {
+    const s = m.o.settings || {};
+    const n = num(s.mpPilots) || (m.air > 12 * 3600 ? 4 : m.air > 8.5 * 3600 ? 3 : 2);
+    const p = m.crewDeck.map((c) => ({ ...c }));
+    while (p.length < n) p.push({ name: `RELIEF PILOT ${p.length - 1}`, role: 'Relief Pilot', emp: '' });
+    return p.slice(0, Math.max(n, p.length));
+  }
+  function crewListPage(m) {
+    const pos = (r) => (r === 'Captain' ? 'CA' : r === 'First Officer' ? 'FO' : r === 'Purser' ? 'FA-A' : r === 'Relief Pilot' ? 'RFO' : 'FA');
+    const tbl = (list) => `<table class="mp-crt"><tr><th>Position</th><th>Name</th><th>Rank</th><th>Employee #</th></tr>${list.map((c) => `<tr><td>${pos(c.role)}</td><td>${esc(c.name)}</td><td>${esc(c.role)}</td><td>${esc(c.emp || '-')}</td></tr>`).join('')}</table>`;
+    return `
+      ${pnl('Flight Deck Crew', tbl(crewPilots(m)))}
+      ${pnl('Cabin Crew', m.crewCabin.length ? tbl(m.crewCabin) : '<p class="mp-dvempty">No cabin crew listed</p>')}`;
+  }
+  function crewConnPage(m) {
+    const pos = (r) => (r === 'Captain' ? 'CA' : r === 'First Officer' ? 'FO' : r === 'Purser' ? 'FA-A' : r === 'Relief Pilot' ? 'RFO' : 'FA');
+    const list = (rows) => rows.map((c) => `<tr><td>${pos(c.role)}</td><td>${esc(c.name)}</td><td>-</td><td>-</td><td>-</td></tr>`).join('');
+    return `
+      ${pnl('Incoming flights', `<table class="mp-crt"><tr><th colspan="2">Flight Deck Crew</th><th colspan="3">Flights</th></tr>${list(crewPilots(m))}
+        <tr><th colspan="2">Cabin Crew</th><th colspan="3">Flights</th></tr>${list(m.crewCabin)}</table>`)}
+      ${pnl('Outgoing flights', '<p class="mp-dvempty c">No outbound connection information</p>')}`;
+  }
+
+  // ---------------- Flt Prep > FDP LATT / Block LATT (guide 4.2.11-12) ----------------
+  // SimBrief has no duty data, so limits come from 14 CFR 117: Table B (unaugmented FDP by local report
+  // time, 1-2 segments), Table C (augmented, class 1 rest) and Table A (flight time). Report = STD − 60 min.
+  const FDP_B = [[0, 9], [4, 10], [5, 12], [6, 13], [7, 14], [12, 13], [13, 12], [17, 12], [22, 11], [23, 10]];
+  const FDP_C = [[0, 15, 17], [6, 16, 18.5], [7, 17, 19], [13, 16, 18.5], [17, 15, 17]];
+  function lattData(m) {
+    const s = m.o.settings || {};
+    const pilots = crewPilots(m);
+    const nP = pilots.length;
+    const rep = str(s.mpReport) === '' ? 60 : num(s.mpReport);
+    const report = m.sOut ? new Date(m.sOut.getTime() - rep * 60e3) : null;
+    const lh = report ? new Date(report.getTime() + (m.tzO || 0) * 3600e3).getUTCHours() : 12;
+    const fdp = nP <= 2 ? [...FDP_B].reverse().find(([h]) => lh >= h)[1] : [...FDP_C].reverse().find(([h]) => lh >= h)[nP === 3 ? 1 : 2];
+    const ftl = nP <= 2 ? (lh >= 5 && lh < 20 ? 9 : 8) : nP === 3 ? 13 : 17;
+    const taxiIn = secs(m.o.times.taxi_in);
+    return { pilots, nP, report, lh, fdp, ftl, taxiIn };
+  }
+  function fdpLattPage(m) {
+    const L = lattData(m);
+    const ete = m.air;
+    const latt = L.report ? new Date(L.report.getTime() + (L.fdp * 3600 - ete - L.taxiIn) * 1000) : null;
+    const ext = latt ? new Date(latt.getTime() + 2 * 3600e3) : null;
+    const cell = (d) => `<b data-latt="${d ? d.getTime() : ''}">${esc(zt(d))}</b><b class="g" data-rev>—</b>`;
+    return `
+      <div class="mp-latt" data-kind="fdp" data-ete="${ete}">
+        <div class="mp-lattop">
+          ${pnl('ETE', `<div class="mp-lc"><small>Planned</small><small>Revised</small><b>${esc(hmS(ete))}</b><input class="mp-in w4" data-latt-in placeholder="hhmm" maxlength="5" inputmode="numeric"></div>`)}
+          ${pnl('Most Restrictive FDP LATT', `<div class="mp-lc"><small>Planned</small><small>Revised</small>${cell(latt)}</div>`, 'c')}
+          ${pnl('Most Restrictive LATT With Extension', `<div class="mp-lc"><small>Planned</small><small>Revised</small>${cell(ext)}</div>`, 'c')}
+        </div>
+        <div class="mp-fih">Details</div>
+        <div class="mp-lattd">
+          ${pnl('Crew List', L.pilots.map((p) => `<div class="mp-lcrew"><b>${esc(p.name)}</b><small>${esc(p.role.replace(' ', ''))}</small></div>`).join(''))}
+          ${pnl('FDP LATT', `<div class="mp-lc mp-lcol"><small>Planned</small><small>Revised</small>${L.pilots.map(() => cell(latt)).join('')}</div>`, 'c')}
+          ${pnl('FDP LATT With Extension', `<div class="mp-lc mp-lcol"><small>Planned</small><small>Revised</small>${L.pilots.map(() => cell(ext)).join('')}</div>`, 'c')}
+        </div>
+        <p class="mp-lnote">Limits: 14 CFR 117 ${L.nP <= 2 ? 'Table B' : 'Table C (class 1 rest)'} · ${L.nP} pilots · report ${esc(zt(L.report))} (${Z(L.lh, 2)}L) · max FDP ${L.fdp} h, +2 h extension. Pilots and report time are in Settings.</p>
+      </div>`;
+  }
+  function blockLattPage(m) {
+    const L = lattData(m);
+    const maxTaxi = L.ftl * 3600 - m.air - L.taxiIn;
+    const latt = m.eOut ? new Date(m.eOut.getTime() + maxTaxi * 1000) : null;
+    const cell = (d) => `<b data-latt="${d ? d.getTime() : ''}">${esc(zt(d))}</b><b class="g" data-rev>—</b>`;
+    return `
+      <div class="mp-latt" data-kind="block" data-etd="${m.eOut ? m.eOut.getTime() : ''}">
+        <div class="mp-lattop">
+          ${pnl('ETD', `<div class="mp-lc"><small>Planned</small><small>Revised</small><b>${esc(zt(m.eOut))}</b><input class="mp-in w4" data-latt-in placeholder="hhmm" maxlength="5" inputmode="numeric"></div>`)}
+        </div>
+        <div class="mp-fih">Details</div>
+        <div class="mp-lattd">
+          ${pnl('Crew List', L.pilots.map((p) => `<div class="mp-lcrew"><b>${esc(p.name)}</b><small>${esc(p.role.replace(' ', ''))}</small></div>`).join(''))}
+          ${pnl('Max Taxi Time', `<div class="mp-lcol1"><small>&nbsp;</small>${L.pilots.map(() => `<b>${esc(hmS(maxTaxi))}</b>`).join('')}</div>`, 'c')}
+          ${pnl('Block LATT', `<div class="mp-lc mp-lcol"><small>Planned</small><small>Revised</small>${L.pilots.map(() => cell(latt)).join('')}</div>`, 'c')}
+        </div>
+        <p class="mp-lnote">Limits: 14 CFR 117 Table A flight time ${L.ftl} h (${L.nP} pilots). Max taxi time = flight time limit − ETE − taxi-in.</p>
+      </div>`;
+  }
+
+  // ---------------- Flt Prep > Crew Rest Calculation (guide 4.2.16; flights over 5 h) ----------------
+  function restPage(m, kind) {
+    const pilots = crewPilots(m);
+    const ini = (n) => n.split(/\s+/).filter(Boolean).map((x) => x[0]).slice(0, 2).join('');
+    return `<div class="mp-rest" data-rest="${kind}" data-off="${m.eOff ? m.eOff.getTime() : ''}" data-on="${m.eOn ? m.eOn.getTime() : ''}" data-air="${m.air}"
+      data-pilots="${esc(JSON.stringify(pilots.map((p) => [p.name, ini(p.name)])))}"></div>`;
+  }
+
+  // ---------------- In Flight > Enroute Information (guide 4.3.1) ----------------
+  function enrInfoPage(m) {
+    const { o } = m;
+    const rows = navRows(m, o.raw);
+    const at = (r) => dynZ(r.eta, '');
+    const tocF = o.navlog.find((x) => up(x.ident) === 'TOC');
+    const trop0 = num(tocF?.tropopause_feet) || num(o.general.avg_tropopause);
+    let tropRow = null, past = false;
+    rows.forEach((r) => {
+      if (r.toc) past = true;
+      if (r.tod) past = false;
+      const tf = num(r.f?.tropopause_feet);
+      if (!tropRow && past && trop0 && tf && tf < trop0 - 4000) tropRow = r;
+    });
+    // FIR entries: navlog fir_crossing, else a change of the fix's FIR
+    const firs = [];
+    let prevFir = up(o.navlog[0]?.fir);
+    rows.forEach((r) => {
+      const fc = asArray(r.f?.fir_crossing).filter((x) => x && x.fir_icao);
+      fc.forEach((x) => firs.push({ r, fir: up(x.fir_icao), name: up(x.fir_name), lat: num(x.pos_lat_entry), lon: num(x.pos_long_entry) }));
+      if (!fc.length && r.fir && prevFir && r.fir !== prevFir && !firs.some((x) => x.fir === r.fir)) firs.push({ r, fir: r.fir, name: '', lat: r.lat, lon: r.lon });
+      if (r.fir) prevFir = r.fir;
+    });
+    const pos = (lat, lon) => {
+      if (!Number.isFinite(lat) || !Number.isFinite(lon)) return '';
+      const f = (v, w) => { const a = Math.abs(v); const d = Math.floor(a); const mm = ((a - d) * 60).toFixed(1); return `${Z(d, w)}${mm.padStart(4, '0')}`; };
+      return `${lat >= 0 ? 'N' : 'S'}${f(lat, 2)} ${lon >= 0 ? 'E' : 'W'}${f(lon, 3)}`;
+    };
+    const terrain = rows.filter((r) => num(r.f?.mora) >= 10000 && !r.origin);
+    // Key info
+    const key = [];
+    const O = o.origin || {}, D = o.dest || {};
+    key.push({ id: O.icao, d: m.eOut, info: ['Departure'] });
+    key.push({ id: '', d: m.eOff, info: ['Take off'] });
+    let lastFl = num(o.general.initial_altitude);
+    const steps = fiBits(m).steps.slice(1);
+    rows.forEach((r, i) => {
+      if (r.origin) return;
+      const info = [], act = [];
+      if (r.toc) info.push(`Top of climb FL${Z(C.flOf(r.f.altitude_feet), 3)}`);
+      if (r.tod) info.push('Top of descent');
+      firs.filter((x) => x.r === r).forEach((x) => info.push(`Entering FIR ${x.fir}${x.name ? ` (${x.name})` : ''}`));
+      if (r.rpt) { act.push('ACTION'); info.push(`Reporting Point (${r.id})`); }
+      steps.filter(([fx]) => fx === r.id).forEach(([, fl]) => { if (fl * 100 !== lastFl) { act.push('ACTION'); info.push(`Climb to reach FL${Z(fl, 3)} at ${rows[i + 1]?.id || r.id}`); lastFl = fl * 100; } });
+      if (tropRow === r) { act.push('FMS'); info.push(`Consider FMS Tropopause Update (Tropopause = ${Math.round(num(r.f.tropopause_feet) / 100)})`); }
+      if (terrain.includes(r)) info.push('TERRAIN');
+      if (/^ETP/.test(r.id)) { act.push('FMS'); info.push(`ETOPS ${r.f?.name || 'equal time point'}`); }
+      if (info.length) key.push({ id: fixName(r.id), d: r.eta, act, info });
+    });
+    key.push({ id: D.icao, d: m.eOn, info: ['Landing'] });
+    const tbl = (head, body) => `<table class="mp-eit"><tr>${head.map((h) => `<th>${h}</th>`).join('')}</tr>${body}</table>`;
+    return `
+      ${pnl('Tropopause and FMS Setting:', tropRow
+    ? `<p class="mp-eip">Arriving On Waypoint <b>${esc(tropRow.id)}</b> (${dynZ(tropRow.eta, 'gr')}) - Consider FMS Tropopause Update. (Tropopause = ${Math.round(num(tropRow.f.tropopause_feet) / 100)})</p>`
+    : '<p class="mp-eip">No tropopause drop of more than 4000 ft from the top of climb value.</p>', 'c')}
+      ${pnl('Terrain:', terrain.length ? `<div class="mp-eis">Critical Terrain Summary:</div>${tbl(['Waypoint', 'ETA', 'Critical Terrain Info'], terrain.map((r) => `<tr><td>${esc(r.id)}</td><td>${at(r)}</td><td>** MORA ${Math.round(num(r.f.mora) / 100) * 100} FT ** ${esc(pos(r.lat, r.lon))} **</td></tr>`).join(''))}` : '<p class="mp-eip">No critical terrain information for this route.</p>', 'c')}
+      ${pnl('Navigation:', firs.length ? `<div class="mp-eis">FIR Information:</div>${tbl(['Waypoint', 'ETA', 'Entering'], firs.map((x) => `<tr><td>${esc(x.r.id)}</td><td>${at(x.r)}</td><td>** FIR ${esc(x.fir)}${x.name ? ` (${esc(x.name)})` : ''} ** ${esc(pos(x.lat, x.lon))} **</td></tr>`).join(''))}` : '<p class="mp-eip">No FIR boundary crossed.</p>', 'c')}
+      ${pnl('Key info / Activities during flight:', tbl(['Waypoint', 'Time', 'Action', 'Info / Event / Actions'], key.map((k) => `<tr><td>${esc(k.id)}</td><td>${dynZ(k.d, '').replace(/Z<\/b>$/, '</b>').replace(/>(\d\d:\d\d)Z</, '>$1<')}</td><td>${(k.act || []).map(esc).join('<br>')}</td><td>${k.info.map(esc).join('<br>')}</td></tr>`).join('')), 'c')}`;
+  }
+
+  // ---------------- In Flight > Oceanic Tracks (guide 4.3.5) ----------------
+  function oceanicPage(m) {
+    const t = m.o.raw.tracks || {};
+    const msgs = [];
+    Object.entries(t.nat_notams || {}).forEach(([k, v]) => { if (str(v)) msgs.push(['North Atlantic Tracks', up(k), str(v)]); });
+    Object.entries(t).filter(([k]) => k !== 'nat_notams').forEach(([k, v]) => {
+      asArray(v).forEach((x) => { if (typeof x === 'string') msgs.push([up(k), '', x]); else if (x && (x.ident || x.route)) msgs.push([up(k), '', `${up(x.ident)} ${up(x.route)}`]); });
+    });
+    if (!msgs.length) return txtDoc(['NO OCEANIC TRACK MESSAGE IN THIS FLIGHT PLAN']);
+    const bar = '#'.repeat(40);
+    return txtDoc(msgs.flatMap(([title, src, body]) => [bar, `# ${title}${src ? ` - ${src}` : ''} #`, bar, '', ...body.trimEnd().split('\n'), '']));
+  }
+
+  // ---------------- Weather > METAR & TAF (guide 4.6.1) ----------------
+  const WX_RED = /(TS|FZ|IC|PL|GR|GS|FG|VA|PO|SQ|FC|SS|DS)/;
+  const WX_AMB = /(SH|DZ|RA|SN|SG|UP)/;
+  const sev = (cls) => (cls === 'r' ? 2 : cls === 'a' ? 1 : 0);
+  function wxColor(tok, isMetar, afterWind) {
+    let mt;
+    if (/^(\+|-|VC)?(MI|PR|BC|DR|BL|SH|TS|FZ)?(DZ|RA|SN|SG|IC|PL|GR|GS|UP|BR|FG|FU|VA|DU|SA|HZ|PO|SQ|FC|SS|DS)+$/.test(tok) || /^(\+|-|VC)?(TS|SH)$/.test(tok)) {
+      return WX_RED.test(tok.replace(/^(\+|-|VC)/, '')) ? 'r' : WX_AMB.test(tok) ? 'a' : '';
+    }
+    if ((mt = /^(\d{3}|VRB)(\d{2,3})(G(\d{2,3}))?(KT|MPS)$/.exec(tok))) {
+      const k = mt[5] === 'MPS' ? 1.944 : 1;
+      const v = Math.max(num(mt[2]), num(mt[4])) * k;
+      return v > 30 ? 'r' : v > 20 ? 'a' : '';
+    }
+    if (/^[MP]?(\d+|\d\/\d)SM$/.test(tok)) {
+      const x = tok.replace(/^[MP]/, '').replace('SM', '');
+      const v = x.includes('/') ? num(x.split('/')[0]) / num(x.split('/')[1]) : num(x);
+      return v < 1 ? 'r' : v < 3 ? 'a' : '';
+    }
+    if (afterWind && /^\d{4}(NDV)?$/.test(tok)) {
+      const v = num(tok.slice(0, 4));
+      return v >= 9999 ? '' : v < 1600 ? 'r' : v < 4800 ? 'a' : '';
+    }
+    if (isMetar && (mt = /^(M?\d{2})\/(M?\d{2})?$/.exec(tok))) {
+      const t = num(mt[1].replace('M', '-'));
+      return t < -5 ? 'r' : t < 11 ? 'a' : '';
+    }
+    return '';
+  }
+  function wxHtml(text, isMetar) {
+    let rmk = false, prev = '';
+    return esc(text).split(/(\s+)/).map((tok) => {
+      if (!tok || /^\s+$/.test(tok)) return tok;
+      if (tok === 'RMK') rmk = true;
+      const c = rmk ? '' : wxColor(tok, isMetar, /(KT|MPS)$|^\d{3}V\d{3}$/.test(prev));
+      prev = tok;
+      return c ? `<span class="wx${c}">${tok}</span>` : tok;
+    }).join('');
+  }
+  // METAR obs "ddhhmmZ"; TAF issue "ddhhmmZ" + validity "ddhh/ddhh" -> Dates around a reference
+  const wxDate = (dd, hh, mm, ref) => {
+    if (!ref) ref = new Date();
+    let best = null;
+    [-1, 0, 1].forEach((k) => {
+      const d = new Date(Date.UTC(ref.getUTCFullYear(), ref.getUTCMonth() + k, +dd, +hh % 24, +mm));
+      if (+hh === 24) d.setUTCDate(d.getUTCDate() + 1);
+      if (!best || Math.abs(d - ref) < Math.abs(best - ref)) best = d;
+    });
+    return best;
+  };
+  const dmy = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}` : '');
+  function wxTiles(port, label, ref, refLabel, metars, tafs) {
+    const icao = up(port.icao || port.icao_code);
+    const iata = up(port.iata || port.iata_code || port.code);
+    const now = new Date();
+    const mt = asArray(metars).map(str).filter(Boolean);
+    const tf = asArray(tafs).map(str).filter(Boolean);
+    const metarTile = (txt) => {
+      const g = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(txt);
+      const obs = g ? wxDate(g[1], g[2], g[3], ref || now) : null;
+      const st = !ref || !obs ? '' : obs >= ref - 2 * 3600e3 && obs <= +ref + 3600e3 ? 'ok' : 'old';
+      const kind = /^SPECI/.test(txt) ? 'SPECI' : 'METAR';
+      return `<div class="mp-wxt"><div class="mp-wxh"><span class="k">${kind}</span><i></i><span class="${st}">${esc(dmy(obs))}</span><span class="mp-grow"></span><span>${esc(icao)}</span></div>
+        <div class="mp-wxrow"><span class="k">Original text</span><span class="mp-wxtx">${wxHtml(txt.replace(/\s+/g, ' ').trim(), true)}</span></div></div>`;
+    };
+    const tafTile = (txt) => {
+      const flat = txt.replace(/\s+/g, ' ').trim();
+      const g = /\b(\d{2})(\d{2})(\d{2})Z\b/.exec(flat);
+      const v = /\b(\d{2})(\d{2})\/(\d{2})(\d{2})\b/.exec(flat);
+      const iss = g ? wxDate(g[1], g[2], g[3], ref || now) : null;
+      const from = v ? wxDate(v[1], v[2], '00', iss || ref || now) : null;
+      const to = v ? wxDate(v[3], v[4], '00', from || ref || now) : null;
+      const st = !ref || !from ? '' : from <= ref - 3600e3 && to >= +ref + 3600e3 ? 'ok' : 'old';
+      const body = flat.replace(/\s(?=(BECMG|TEMPO|FM\d{6}|PROB\d{2}|RMK)\b)/g, '\n');
+      return `<div class="mp-wxt"><div class="mp-wxh"><span class="k">TAF</span><i></i><span>${esc(dmy(iss))}</span>${from ? ` <span>(From <b class="${st}">${esc(dmy(from))}</b> to <b class="${st}">${esc(dmy(to))}</b>)</span>` : ''}<span class="mp-grow"></span><span>${esc(icao)}</span></div>
+        <div class="mp-wxrow"><span class="k">Original text</span><span class="mp-wxtx">${body.split('\n').map((l) => wxHtml(l, false)).join('<br>')}</span></div></div>`;
+    };
+    return `
+      <section class="mp-wxsec">
+        <div class="mp-wxsh"><b>${esc(label)}</b><span>${refLabel ? `(${esc(refLabel)}: ${esc(dmy(ref))})` : ''}</span><b class="y">${esc(icao)}${iata ? ` / ${esc(iata)}` : ''}</b></div>
+        <div class="mp-wxsub">Observation</div>${mt.length ? mt.map(metarTile).join('') : '<p class="mp-dvempty">No METAR available</p>'}
+        <div class="mp-wxsub">Forecast</div>${tf.length ? tf.map(tafTile).join('') : '<p class="mp-dvempty">No TAF available</p>'}
+      </section>`;
+  }
+  function wxPage(m, which) {
+    const { o } = m;
+    const wx = o.raw.weather || {};
+    const O = o.origin, D = o.dest;
+    const portWx = (p, fm, ft) => [p?.raw?.metar || fm, p?.raw?.taf || ft];
+    if (which === 'o') return O ? wxTiles(O, 'Departure Airport', m.eOut, 'ETD', ...portWx(O, wx.orig_metar, wx.orig_taf)) : '';
+    if (which === 'd') return D ? wxTiles(D, 'Arrival Airport', m.eIn, 'ETA', ...portWx(D, wx.dest_metar, wx.dest_taf)) : '';
+    if (which === 'a') {
+      const list = o.alts.filter(Boolean).map((a, i) => wxTiles(a, i === 0 ? 'Planned Alternate Airport' : 'Alternate Airport', null, '', a.raw?.metar, a.raw?.taf));
+      if (o.toAlt) list.push(wxTiles(o.toAlt, 'Takeoff Alternate Airport', null, '', o.toAlt.raw?.metar, o.toAlt.raw?.taf));
+      return list.join('') || '<p class="mp-dvempty">No alternate airport in this flight plan</p>';
+    }
+    // enroute: ETOPS suitable airports + enroute alternates
+    const enr = [...asArray(o.raw.etops?.suitable_airport), ...asArray(o.raw.enroute_altn)].filter((x) => x && x.icao_code);
+    const seen = new Set();
+    const list = enr.filter((x) => !seen.has(x.icao_code) && seen.add(x.icao_code))
+      .map((x) => wxTiles(x, m.etops ? 'ETOPS Suitable Airport' : 'Enroute Airport', null, '', x.metar, x.taf));
+    return list.join('') || '<p class="mp-dvempty">No enroute airports in this flight plan</p>';
+  }
+  function atisPage(m) {
+    const { o } = m;
+    const order = [['Departure Airport', o.origin], ['Arrival Airport', o.dest], ...o.alts.filter(Boolean).map((a) => ['Alternate Airport', a])];
+    const out = order.map(([lab, p]) => {
+      const list = asArray(p?.raw?.atis).filter((x) => x && str(x.message)).sort((a, b) => (date(b.issued) || 0) - (date(a.issued) || 0));
+      if (!list.length) return '';
+      return `<section class="mp-wxsec"><div class="mp-wxsh"><b>${esc(lab)}</b><span></span><b class="y">${esc(p.icao)}${p.iata ? ` / ${esc(p.iata)}` : ''}</b></div>${list.map((x) => `
+        <div class="mp-wxt"><div class="mp-wxh"><span class="k">ATIS ${esc(up(x.letter))}</span><i></i><span>${esc(dmy(date(x.issued)))}</span><span class="mp-grow"></span><span>${esc(up(x.type))} · ${esc(up(x.network))}</span></div>
+        <div class="mp-wxrow"><span class="k">Message</span><span class="mp-wxtx">${esc(up(x.message)).replace(/\n/g, '<br>')}</span></div></div>`).join('')}</section>`;
+    }).join('');
+    return out || '<p class="mp-dvempty">No ATIS available for this flight</p>';
+  }
+
+  // ---------------- Weather > Forecasted Winds & Temp (guide 4.6.2) ----------------
+  function windsPage(m) {
+    const { o } = m;
+    const isa = (ft) => Math.max(15 - 1.98 * (ft / 1000), -56.5);
+    const tocF = o.navlog.find((x) => up(x.ident) === 'TOC');
+    const trop0 = num(tocF?.tropopause_feet) || num(o.general.avg_tropopause);
+    const fixes = o.navlog.filter((f) => !['TOC', 'TOD'].includes(up(f.ident)) && asArray(f.wind_data).length);
+    const rows = fixes.map((f) => {
+      const lv = asArray(f.wind_data).filter((x) => x && str(x.altitude) !== '').sort((a, b) => num(b.altitude) - num(a.altitude));
+      const plan = num(f.altitude_feet);
+      const near = lv.reduce((b, x) => (b == null || Math.abs(num(x.altitude) - plan) < Math.abs(num(b.altitude) - plan) ? x : b), null);
+      const idx = Math.max(0, lv.indexOf(near));
+      const pick = lv.slice(Math.max(0, Math.min(idx - 2, lv.length - 5)), Math.max(0, Math.min(idx - 2, lv.length - 5)) + 5);
+      const tf = num(f.tropopause_feet);
+      return `<div class="mp-wtr"><div class="mp-wtf">${esc(up(f.ident))}</div>
+        <div class="mp-wtc"><small>Trop</small><b class="${trop0 && tf && tf < trop0 - 4000 ? 'a' : ''}">${tf ? Math.round(tf / 100) : '-'}</b></div>
+        ${pick.map((x) => {
+    const alt = num(x.altitude), oat = Math.round(num(x.oat)), dev = Math.round(oat - isa(alt));
+    const dc = dev >= 15 ? 'r' : dev >= 11 ? 'a' : '';
+    return `<div class="mp-wtc${x === near && plan > 10000 ? ' on' : ''}"><small>FL</small><b>FL${Z(Math.round(alt / 100), 3)}</b><small>Wind</small><b>${Z(num(x.wind_dir), 3)}/${Z(num(x.wind_spd), 2)}</b><small>OAT/ΔISA</small><b>${oat} <span class="${dc}">Δ${dev < 0 ? '-' : '+'}${Z(Math.abs(dev), 2)}</span></b></div>`;
+  }).join('')}</div>`;
+    }).join('');
+    return `<div class="mp-wt">${rows || '<p class="mp-dvempty">No wind data in this flight plan</p>'}</div>
+      <p class="mp-lnote">Static data from flight plan generation. ΔISA +11 to +14 amber, +15 or more red; TROP amber when more than 4,000 ft below the top-of-climb value.</p>`;
+  }
+
+  // ---------------- Weather > Field Conditions (guide 4.6.4) ----------------
+  function fieldCondPage(m) {
+    const { o } = m;
+    const ports = [o.origin, o.dest, ...o.alts].filter(Boolean);
+    const lines = ['FIELD CONDITIONS', ''];
+    ports.forEach((p) => {
+      const fc = p.notams.map((n) => up(str(n.notam_text) || str(n.notam_raw)).replace(/\s+/g, ' ').trim())
+        .filter((t) => /FICON|RWYCC|\bRSC\b|SNOWTAM|BRAKING|CONTAMINATED|\bRWY\b.*\bCLSD\b|\bTWY\b.*\bCLSD\b|\bWET\b|\bICE\b|\bSNOW\b/.test(t));
+      lines.push(`* ${p.icao}/${p.iata || p.code} FIELD REPORT *`, '-'.repeat(60));
+      if (!fc.length) lines.push('NO FIELD CONDITION REPORTS - SEE NOTAMS');
+      fc.slice(0, 12).forEach((t) => lines.push(...wrapTxt(t, 60), ''));
+      lines.push('');
+    });
+    return txtDoc(lines);
+  }
+
+  // ---------------- Weather > Threat Plots (guide 4.6.3): SIGMETs along the route ----------------
+  function threatPage(m) {
+    const sig = m.o.sigmets.filter(Boolean);
+    if (!sig.length) return '<p class="mp-dvempty">No threat plots (SIGMETs) for this flight</p>';
+    return sig.map((x) => {
+      if (typeof x === 'string') return pnl('', `<pre class="mp-fipre">${esc(x)}</pre>`);
+      const haz = up(x.hazard) || 'SIGMET';
+      const kind = /CONVECT|TS/.test(haz) ? 'ALERT' : /TURB/.test(haz) ? 'ALERT' : 'ADVISORY';
+      const top = /TOPS?\s+(TO|ABV)?\s*FL(\d{3})/.exec(up(x.text));
+      const rng = /FL(\d{3})\/(\d{3})|BTN\s+FL(\d{3})\s+AND\s+FL(\d{3})/.exec(up(x.text));
+      return `<div class="mp-tp"><div class="mp-tph"><span class="k">${kind} ${esc(haz)}</span><b>${esc(up(x.fir) || '')}${x.id ? `–${esc(up(x.id))}` : ''}</b><i></i><span>${esc(dmy(date(x.issued)))} | From ${esc(dmy(date(x.start)))} To ${esc(dmy(date(x.end)))}</span></div>
+        <div class="mp-tpr"><span class="k">Forecasted Location:<br>Area</span><span>${esc(up(x.fir_name) || up(x.fir) || '-')}</span></div>
+        <div class="mp-tpr"><span class="k">Altitude</span><span>${rng ? `From FL ${rng[1] || rng[3]} To FL ${rng[2] || rng[4]}` : top ? `Tops FL ${top[2]}` : '-'}</span></div>
+        <div class="mp-tpr"><span class="k">Advisory:</span><span>${esc(up(x.text))}</span></div></div>`;
+    }).join('');
+  }
+  const imgDocPage = () => '<p class="mp-dvempty">Graphical threat plot charts are image products that SimBrief does not provide, so this page is empty in the converter.</p>';
+
+  // ---------------- Other Docs ----------------
+  function addendumPage(m) {
+    const { o } = m;
+    const L = lattData(m);
+    const latt = L.report ? new Date(L.report.getTime() + (L.fdp * 3600 - m.air - L.taxiIn) * 1000) : null;
+    const ext = latt ? new Date(latt.getTime() + 2 * 3600e3) : null;
+    const d = (x) => (x ? `${Z(x.getUTCDate(), 2)}/${Z(x.getUTCHours(), 2)}${Z(x.getUTCMinutes(), 2)}Z` : '--/----Z');
+    const mel = str(o.settings.mpMel).split('\n').map((x) => x.trim()).filter(Boolean);
+    const fn = up(o.general.flight_number).replace(/\D/g, '');
+    return txtDoc([
+      '                    FLIGHT PLAN ADDENDUM', '',
+      'STAY AT GATE FOR WDR', 'NONE', '',
+      `FLT ${Z(fn || 0, 4)}/${Z(m.sOut?.getUTCDate() || 0, 2)}${up(MON[m.sOut?.getUTCMonth() || 0])}  SHIP ${o.fleet}  ${o.origin?.iata || o.origin?.icao}-${o.dest?.iata || o.dest?.icao}  RLS ${o.release}`, '',
+      '-'.repeat(60),
+      '****  LATEST ALLOWABLE TAKEOFF TIME                    ****',
+      '****     DUE MAXIMUM FLIGHT DUTY PERIOD LIMIT           ****', '',
+      ...L.pilots.flatMap((p) => [`${up(p.role)}  ${up(p.name)}`, `    DUTY LATT DUE MAX FDP LIMIT:                    ${d(latt)}`, `    DUTY LATT DUE MAX FDP LIMIT WITH EXTENSION:     ${d(ext)}`, '']),
+      '-'.repeat(60), '',
+      `PSGR CONFIG ${o.maxPax || '-'}  BOOKED ${Math.round(num(o.wts.pax_count))}`, '',
+      'MEL NOTES:', ...(mel.length ? mel.map(up) : ['NIL']), '',
+      'FLIGHT ATTENDANT BRIEFING GUIDE',
+      `  FLIGHT TIME ${hmS(m.air)}   ${m.crewCabin.length} FLIGHT ATTENDANTS`,
+    ]);
+  }
+  function cbpPage(m) {
+    const html = str(m.o.raw.text?.plan_html);
+    if (!html) return txtDoc(['NO CREW BRIEFING PACKAGE TEXT IN THIS FLIGHT PLAN']);
+    const t = html.replace(/<br\s*\/?>/gi, '\n').replace(/<\/(div|p|tr|h\d)>/gi, '\n').replace(/<[^>]+>/g, '')
+      .replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/\n{3,}/g, '\n\n');
+    return `<pre class="mp-txt mp-cbp">${esc(t.trim())}</pre>`;
+  }
+  function aboutFpPage() {
+    const li = (a) => `<ul class="mp-help">${a.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+    return pnl('About Flight Plan', li([
+      'Times are UTC (Z) unless marked (L) for local time.',
+      'Weights and fuel are in pounds. FMS pages show thousands of pounds.',
+      '<span class="g">Green</span> values are calculated or revised: planned block fuel, minimum fuel for takeoff, plan landing fuel, and any time revised from a Nav Log ATA.',
+      'Route strings: waypoints and airports in white; airways, DCT, SID and STAR in <span class="g">green</span>; FL steps in <span class="b">blue</span> (amber for a step descent).',
+      'ETA columns in Enroute Information, Alternates Summary and ETOPS start white (flight plan) and turn green once a Nav Log ATA revises them.',
+      'Unread documents carry a bright bar in the drawer; the tab badge counts them.',
+    ]));
+  }
+  function aboutWxPage() {
+    const li = (a) => `<ul class="mp-help">${a.map((x) => `<li>${x}</li>`).join('')}</ul>`;
+    return pnl('About Airport Weather', li([
+      'METAR time is <span class="g">green</span> when the observation falls in the operating window (ETD/ETA −2 h to +1 h) and <span class="wxa">amber</span> when it is older.',
+      'TAF validity is <span class="g">green</span> when it covers ETD/ETA ±1 h, <span class="wxa">amber</span> when it does not.',
+      'Weather: <span class="wxr">red</span> for TS, FZ, IC, PL, GR, GS, FG, VA, PO, SQ, FC, SS, DS; <span class="wxa">amber</span> for SH, DZ, RA, SN, SG, UP.',
+      'Wind and gusts: <span class="wxa">amber</span> above 20 kt, <span class="wxr">red</span> above 30 kt.',
+      'Visibility: <span class="wxa">amber</span> below 3 SM, <span class="wxr">red</span> below 1 SM.',
+      'METAR temperature: <span class="wxa">amber</span> below 11 °C, <span class="wxr">red</span> below −5 °C.',
+    ]));
+  }
+
+  // ---------------- live behaviour for the documents above (called when a document opens) ----------------
+  const LIVE_KEY = 'mp.docs';
+  const liveStore = {
+    get(f) { try { return (JSON.parse(localStorage.getItem(LIVE_KEY)) || {})[f] || {}; } catch { return {}; } },
+    set(f, k, v) {
+      try { const all = JSON.parse(localStorage.getItem(LIVE_KEY)) || {}; all[f] = { ...(all[f] || {}), [k]: v }; localStorage.setItem(LIVE_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
+    },
+  };
+  const hhmmZ = (d) => `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}Z`;
+  const parseHm = (v) => { const mt = /^(\d{1,2}):?([0-5]\d)$/.exec(String(v || '').trim()); return mt ? (+mt[1] * 60 + +mt[2]) * 60 : null; };
+  function liveDocs(root, screen, body) {
+    const flight = screen.dataset.flight;
+    // 1) times that follow the Nav Log ATAs
+    const shift = Number(root.dataset.mpShift) || 0;
+    const rev = !!root.dataset.mpRev;
+    body.querySelectorAll('[data-dyn]').forEach((el) => {
+      const t = Number(el.dataset.dyn);
+      if (!t) return;
+      const d = new Date(t + (rev ? shift : 0));
+      el.textContent = /Z$/.test(el.textContent) ? hhmmZ(d) : hhmmZ(d).slice(0, 5);
+      el.classList.toggle('g', rev);
+    });
+    // 2) FDRA accept
+    const fdra = body.querySelector('.mp-fdra');
+    if (fdra) {
+      const st = liveStore.get(flight).fdra;
+      const btn = fdra.querySelector('.mp-accept'), msg = fdra.querySelector('.mp-fdras');
+      const sel = fdra.querySelector('[data-fdra="name"]'), nn = fdra.querySelector('[data-fdra="newname"]'), staff = fdra.querySelector('[data-fdra="staff"]');
+      const show = (x) => { btn.disabled = true; btn.textContent = 'ACCEPTED'; msg.hidden = false; msg.textContent = `Accepted by ${x.name}${x.staff ? ` (${x.staff})` : ''} at ${x.at}`; };
+      if (st) show(st);
+      sel.addEventListener('change', () => { nn.hidden = sel.value !== ''; const o = sel.selectedOptions[0]; if (o?.dataset.emp) staff.value = o.dataset.emp; });
+      btn.addEventListener('click', () => {
+        const name = sel.value || nn.value.trim().toUpperCase();
+        if (!name) { nn.hidden = false; nn.focus(); return; }
+        const x = { name, staff: staff.value.trim(), at: hhmmZ(new Date()) };
+        liveStore.set(flight, 'fdra', x); show(x);
+        root.querySelectorAll('.mp-dri[data-mp-doc="prep:fdra"] span').forEach((s) => { s.innerHTML = 'FDRA<br>Signed'; });
+      });
+    }
+    // 3) LATT recalculation
+    const latt = body.querySelector('.mp-latt');
+    if (latt) {
+      const kind = latt.dataset.kind;
+      const inp = latt.querySelector('[data-latt-in]');
+      const saved = liveStore.get(flight)[`latt-${kind}`];
+      if (saved) inp.value = saved;
+      const calc = () => {
+        let delta = null;
+        if (kind === 'fdp') { const s = parseHm(inp.value); if (s != null) delta = -(s - Number(latt.dataset.ete)); } else {
+          const s = parseHm(inp.value), etd = Number(latt.dataset.etd);
+          if (s != null && etd) { const d = new Date(etd); d.setUTCHours(0, 0, 0, 0); let r = d.getTime() + s * 1000; if (r - etd > 12 * 3600e3) r -= 86400e3; else if (etd - r > 12 * 3600e3) r += 86400e3; delta = r - etd; delta /= 1000; }
+        }
+        latt.querySelectorAll('[data-latt]').forEach((b) => {
+          const r = b.nextElementSibling;
+          const t = Number(b.dataset.latt);
+          r.textContent = delta == null || !t ? '—' : hhmmZ(new Date(t + delta * 1000));
+        });
+        inp.classList.toggle('set', delta != null);
+      };
+      inp.addEventListener('input', () => { liveStore.set(flight, `latt-${kind}`, inp.value.trim()); calc(); });
+      calc();
+    }
+    // 4) Crew rest
+    const rest = body.querySelector('.mp-rest');
+    if (rest) wireRest(root, screen, rest);
+  }
+
+  // Crew Rest: Rest Context and Settings (inputs), Three / Four Pilots Planning (timelines)
+  function wireRest(root, screen, el) {
+    const flight = screen.dataset.flight;
+    const kind = el.dataset.rest;
+    const st = { ato: '', after: '00:15', before: '00:45', wake: '00:10', order3: null, order4: null, pick4: 0, ...(liveStore.get(flight).rest || {}) };
+    const save = () => liveStore.set(flight, 'rest', st);
+    const pilots = JSON.parse(el.dataset.pilots || '[]');
+    const off = Number(el.dataset.off), on = Number(el.dataset.on);
+    const hm = (s) => hmS(s);
+    const navAto = () => root.querySelector('.mp-nlrow input[data-k$=":ata"]')?.value || '';
+    const times = () => {
+      const ato = st.ato || navAto();
+      let to = off;
+      const s = parseHm(ato);
+      if (s != null && off) { const d = new Date(off); d.setUTCHours(0, 0, 0, 0); to = d.getTime() + s * 1000; if (to - off > 12 * 3600e3) to -= 86400e3; else if (off - to > 12 * 3600e3) to += 86400e3; }
+      const shift = root.dataset.mpRev ? Number(root.dataset.mpShift) || 0 : (to - off);
+      const land = on + shift;
+      const start = to + (parseHm(st.after) || 0) * 1000;
+      const end = land - (parseHm(st.before) || 0) * 1000;
+      return { to, land, start, end, total: Math.max(0, (end - start) / 1000), actual: s != null };
+    };
+    const z = (t) => hhmmZ(new Date(t));
+    const colors = ['#b0508f', '#159a6e', '#6c8fd6', '#c58a2a'];
+    const bar = (segs) => `<div class="mp-rbar">${segs.map((x) => `<div style="flex:${x.d};background:${colors[x.p % 4]}"><i>${esc(pilots[x.p]?.[1] || '?')}</i></div>`).join('')}</div>
+      <div class="mp-rticks">${segs.slice(0, -1).map((x, i) => `<span style="left:${(segs.slice(0, i + 1).reduce((a, y) => a + y.d, 0) / segs.reduce((a, y) => a + y.d, 0)) * 100}%">${z(x.end)}</span>`).join('')}</div>`;
+    const details = (segs) => `<div class="mp-rdet">${segs.map((x, i) => `<div style="background:${colors[x.p % 4]}"><b>${i + 1}${['st', 'nd', 'rd', 'th'][Math.min(i, 3)]} break</b>
+      <span>Start</span><em>${z(x.start)}</em><span>End</span><em>${z(x.end)}</em><span>Wake up</span><em>${z(x.end - (parseHm(st.wake) || 0) * 1000)}</em><small>${esc(pilots[x.p]?.[1] || '')} ${esc(pilots[x.p]?.[0] || '')}</small></div>`).join('')}</div>`;
+    const plan = (start, durs, ps) => { let t = start; return durs.map((d, i) => { const s = t; t += d * 1000; return { start: s, end: t, d, p: ps[i] }; }); };
+    const editor = (n, key) => {
+      const ord = st[key] || [...Array(n).keys()];
+      return `<div class="mp-redit" hidden><b>Edit Pilot</b>${ord.map((p, i) => `<label>${n === 3 ? `${i + 1}${['st', 'nd', 'rd'][i]} rest` : i < 2 ? `1st Pair` : '2nd Pair / Central Block'}<select data-slot="${i}">${pilots.map((x, j) => `<option value="${j}"${j === p ? ' selected' : ''}>${esc(x[0])}</option>`).join('')}</select></label>`).join('')}
+        <p class="mp-rwarn" hidden>Please select a unique pilot for each slot</p><button type="button" class="mp-btn" data-confirm>CONFIRM</button></div>`;
+    };
+    const render = () => {
+      const T = times();
+      if (kind === 'ctx') {
+        el.innerHTML = `<div class="mp-rgrid">
+          ${pnl('Flight Data', `<div class="mp-rkv"><span>Planned Take Off</span><b>${z(off)}</b><span>Actual Take Off</span><input class="mp-in w4" data-r="ato" value="${esc(st.ato || navAto())}" placeholder="hhmm"><span>Flight Time</span><b>${hm(Number(el.dataset.air))}</b><span>Planned Landing</span><b class="g">${z(T.land)}</b></div>`, 'mp-rbox')}
+          ${pnl('Margins', `<div class="mp-rkv"><span>After Take Off</span><input class="mp-in w4" data-r="after" value="${esc(st.after)}"><span>Before Landing</span><input class="mp-in w4" data-r="before" value="${esc(st.before)}"></div>`, 'mp-rbox')}
+          ${pnl('Rest Period', `<div class="mp-rkv"><span>Start</span><b class="g">${z(T.start)}</b><span>Total Break Duration</span><b class="g">${hm(T.total)}</b><span>End</span><b class="g">${z(T.end)}</b></div>`, 'mp-rbox')}
+          ${pnl('Break Timer', `<div class="mp-rkv"><span>Wake Up</span><input class="mp-in w4" data-r="wake" value="${esc(st.wake)}"><span></span><small>(before the end of each break)</small></div>`, 'mp-rbox')}
+        </div>`;
+        el.querySelectorAll('[data-r]').forEach((i) => i.addEventListener('change', () => { st[i.dataset.r] = i.value.trim(); save(); render(); }));
+        return;
+      }
+      const n = kind === 'three' ? 3 : 4;
+      if (pilots.length < n) { el.innerHTML = `<p class="mp-dvempty">This plan lists ${pilots.length} pilots. Set the number of pilots to ${n} in Settings to plan ${n}-pilot rest.</p>`; return; }
+      const key = n === 3 ? 'order3' : 'order4';
+      const ord = st[key] || [...Array(n).keys()];
+      const head = `<div class="mp-rhead"><b>${n === 3 ? 'Three' : 'Four'} Pilots</b><span class="mp-grow"></span><button type="button" class="mp-btn" data-edit>EDIT PILOT</button></div>${editor(n, key)}
+        <div class="mp-rse"><span>Start <b class="g">${z(T.start)}</b></span><span><b class="g">${z(T.end)}</b> End</span></div>`;
+      if (n === 3) {
+        const d = T.total / 3;
+        const segs = plan(T.start, [d, d, d], ord);
+        el.innerHTML = `${head}<div class="mp-rdur">${segs.map((x, i) => `<div><small>${i + 1}${['st', 'nd', 'rd'][i]} Break Duration</small><b class="g">${hm(x.d)}</b></div>`).join('')}</div>${bar(segs)}${details(segs)}`;
+      } else {
+        const t = T.total;
+        const options = [
+          ['Central Block', plan(T.start, [t / 4, t / 2, t / 4], [0, 2, 0].map((i) => ord[i]))],
+          ['Short Break / Long Break', plan(T.start, [t / 6, t / 3, t / 3, t / 6], [ord[0], ord[2], ord[0], ord[2]])],
+          ['Short Break / Long Break', plan(T.start, [t / 3, t / 6, t / 6, t / 3], [ord[0], ord[2], ord[0], ord[2]])],
+        ];
+        el.innerHTML = `${head}${options.map(([lab, segs], i) => `<div class="mp-ropt"><label><input type="radio" name="mp-r4" value="${i}"${st.pick4 === i ? ' checked' : ''}> ${lab}</label>${bar(segs)}<details${st.pick4 === i ? ' open' : ''}><summary>Details</summary>${details(segs)}</details></div>`).join('')}
+          <p class="mp-lnote">Each break is shared by a pair: pilots ${esc(pilots[ord[0]][1])}+${esc(pilots[ord[1]][1])} and ${esc(pilots[ord[2]][1])}+${esc(pilots[ord[3]][1])}.</p>`;
+        el.querySelectorAll('input[name="mp-r4"]').forEach((r) => r.addEventListener('change', () => { st.pick4 = Number(r.value); save(); }));
+      }
+      const ed = el.querySelector('.mp-redit');
+      el.querySelector('[data-edit]').addEventListener('click', () => { ed.hidden = !ed.hidden; });
+      ed.querySelector('[data-confirm]').addEventListener('click', () => {
+        const v = [...ed.querySelectorAll('select')].map((s) => Number(s.value));
+        if (new Set(v).size !== v.length) { ed.querySelector('.mp-rwarn').hidden = false; return; }
+        st[key] = v; save(); render();
+      });
+    };
+    render();
+  }
+
   // Flt Prep > FMS Initialization (per Cole's DAL0183 A333 screenshot). The top mirrors the aircraft's
   // FMS: Airbus types get the MCDU INIT A / INIT FUEL PREDICTION pages; other types show the lower panels.
   function fmsInitPage(m) {
@@ -693,6 +1438,7 @@
     const ldg = new Date(Number(el.dataset.on) + (d - off));
     const hm = (x) => `${Z(x.getUTCHours(), 2)}:${Z(x.getUTCMinutes(), 2)}`;
     const b = el.querySelectorAll('b');
+    b.forEach((x) => x.classList.add('g'));
     b[0].textContent = `${hm(ldg)}Z`;
     if (el.dataset.tz !== '' && b[1]) b[1].textContent = `${hm(new Date(ldg.getTime() + Number(el.dataset.tz) * 3600e3))}L`;
   }
@@ -726,7 +1472,7 @@
             <div><small>Latitude</small><b>${esc(dm(p.pos_lat, 'N', 'S', 2))}</b></div>
             <div><small>Longitude</small><b>${esc(dm(p.pos_long, 'E', 'W', 3))}</b></div>
             <div><small>EET</small><b>${esc(hhmm2(eet))}</b></div>
-            <div><small>ETA</small><b>${eta ? esc(zt(eta)) : '-'}</b></div>
+            <div><small>ETA</small>${dynZ(eta)}</div>
             <div><small>EFOB (lb)</small><b>${W(p.est_fob)}</b></div>
             <div></div><div></div>
           </div>
@@ -736,7 +1482,7 @@
             <div><small>FL</small>${da.map(() => `<b>${fl}</b>`).join('')}</div>
             <div><small>GSR/GSA</small>${da.map((a) => `<b>${gs(a)}</b>`).join('')}</div>
             <div><small>Time</small><b>${dt ? esc(hhmm2(dt)) : '-'}</b></div>
-            <div><small>ETA</small><b>${deta ? esc(zt(deta)) : '-'}</b></div>
+            <div><small>ETA</small>${dynZ(deta)}</div>
             <div></div>
             <div class="r"><small>Fuel Required (lb)</small><b>${W(p.critical_fuel)}</b></div>
           </div>
@@ -769,10 +1515,11 @@
     return Object.entries(menus).map(([key, secs]) => `
     <aside class="mp-drawer" data-mp-drawer="${key}" aria-hidden="true">${secs.map(([title, items]) => `
       ${title ? `<h5 class="mp-drh">${esc(title)}</h5>` : '<div class="mp-drgap"></div>'}
-      ${items.map(([id, label, kind, unread, sub]) => `
+      ${items.map(([id, label, kind, unread, sub]) => (kind === 'note' ? `<p class="mp-drnote">${esc(label)}</p>` : kind === 'act' ? `
+      <button type="button" class="mp-dri mp-dract" data-mp-action="${id.slice(1)}">${ico(id === '!pfr' ? 'post' : 'dxml', 'mp-dric')}<span>${esc(label)}</span></button>` : `
       <button type="button" class="mp-dri${unread ? ' unread' : ''}" data-mp-doc="${key}:${id}" data-default-unread="${unread ? 1 : 0}">
         ${ico(kind === 'img' ? 'dimg' : kind === 'txt' ? 'dtxt' : 'dxml', 'mp-dric')}<span>${esc(label)}${sub ? `<br>${esc(sub)}` : ''}</span>
-      </button>`).join('')}`).join('')}
+      </button>`)).join('')}`).join('')}
     </aside>`).join('');
   }
 
@@ -1048,10 +1795,46 @@ ${body}
       try { localStorage.setItem(READ_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
     },
   };
+  // Post Flight (guide 4.8): Close Flight clears this flight's entries; Send PFR & Close downloads the
+  // Post Flight Report (Nav Log entries, FDRA, NOTAM marks) as a text file first.
+  function postFlight(root, screen, action) {
+    const flight = screen.dataset.flight;
+    if (action === 'pfr') {
+      const rows = [...root.querySelectorAll('.mp-nlrow')];
+      const v = (r, k) => r.querySelector(`input[data-k$=":${k}"]`)?.value || '';
+      const lines = ['POST FLIGHT REPORT', `FLIGHT ${flight}`, `GENERATED ${new Date().toISOString().slice(0, 16).replace('T', ' ')}Z`, '',
+        'FIX        ETA    ATA    PRMG   ARMG   AFL'];
+      rows.forEach((r) => {
+        const id = r.closest('.mp-fix')?.querySelector('.mp-fixh b')?.textContent || '';
+        const cells = r.querySelectorAll(':scope > span');
+        lines.push(`${id.padEnd(10)} ${(cells[1]?.textContent || '').padEnd(6)} ${v(r, 'ata').padEnd(6)} ${String(r.dataset.prmg || '').padEnd(6)} ${v(r, 'armg').padEnd(6)} ${v(r, 'afl')}`);
+      });
+      const fd = liveStore.get(flight).fdra;
+      lines.push('', `FDRA: ${fd ? `ACCEPTED BY ${fd.name} ${fd.staff} AT ${fd.at}` : 'NOT ACCEPTED'}`);
+      const nt = notamStore.get(flight);
+      const marked = [...new Set([...Object.keys(nt.p), ...Object.keys(nt.b)])];
+      lines.push(`NOTAMS VIEWED: ${Object.keys(nt.v).length}`, ...marked.map((id) => `  ${id} ${nt.p[id] ? `IMPORTANCE ${nt.p[id].toUpperCase()}` : ''} ${nt.b[id] ? 'BOOKMARKED' : ''}`.trimEnd()));
+      const blob = new Blob([lines.join('\n')], { type: 'text/plain' });
+      const a = document.createElement('a');
+      a.href = URL.createObjectURL(blob);
+      a.download = `PFR_${flight.replace(/[^\w-]+/g, '_')}.txt`;
+      document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(() => URL.revokeObjectURL(a.href), 1000);
+    }
+    if (!window.confirm(action === 'pfr' ? 'PFR saved. Close this flight and clear its Nav Log entries, NOTAM marks and FDRA?' : 'Close this flight and clear its Nav Log entries, NOTAM marks and FDRA?')) return;
+    root.querySelectorAll('input[data-k]').forEach((el) => { if (el.value) { el.value = ''; delete el.dataset.src; el.dispatchEvent(new Event('input', { bubbles: true })); } });
+    [READ_KEY, NOTAM_KEY, LIVE_KEY, GPS_KEY].forEach((k) => {
+      try { const all = JSON.parse(localStorage.getItem(k)) || {}; delete all[flight]; localStorage.setItem(k, JSON.stringify(all)); } catch { /* storage unavailable */ }
+    });
+    refreshDrawers(root);
+    root.querySelector('[data-mp-page="dashboard"]')?.click();
+  }
+
   function refreshDrawers(root) {
     root.querySelectorAll('.mp-screen').forEach((screen) => {
       const read = readStore.get(screen.dataset.flight);
       screen.querySelectorAll('.mp-dri').forEach((b) => b.classList.toggle('unread', b.dataset.defaultUnread === '1' && !read[b.dataset.mpDoc]));
+      if (liveStore.get(screen.dataset.flight).fdra) screen.querySelectorAll('.mp-dri[data-mp-doc="prep:fdra"] span').forEach((x) => { x.innerHTML = 'FDRA<br>Signed'; });
       screen.querySelectorAll('[data-mp-badge]').forEach((bd) => {
         const n = screen.querySelectorAll(`.mp-drawer[data-mp-drawer="${bd.dataset.mpBadge}"] .mp-dri.unread`).length;
         bd.textContent = n; bd.hidden = !n;
@@ -1097,7 +1880,7 @@ ${body}
         const body = dv.querySelector('.mp-dvb');
         body.replaceChildren();
         dv.dataset.kind = tpl?.dataset.kind || '';
-        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); wireNotams(screen, dv, body); }
+        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); wireNotams(screen, dv, body); liveDocs(root, screen, body); }
         else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
         dv.hidden = false;
         dv.scrollTop = 0;
@@ -1105,6 +1888,8 @@ ${body}
         screen.querySelectorAll('[data-mp-tab]').forEach((t) => t.classList.toggle('docon', t.dataset.mpTab === id.split(':')[0]));
         return true;
       }
+      const actn = e.target.closest('[data-mp-action]');
+      if (actn) { closeDrawers(screen); postFlight(root, screen, actn.dataset.mpAction); return true; }
       const dvs = e.target.closest('[data-mp-dvscroll]');
       if (dvs) { const dv = screen.querySelector('.mp-docview'); dv.scrollBy({ top: Number(dvs.dataset.mpDvscroll) * dv.clientHeight * 0.8, behavior: 'smooth' }); return true; }
       if (e.target.closest('.mp-scrim') || e.target.closest('[data-mp-page]')) {
@@ -1216,6 +2001,8 @@ ${body}
         mark(flIn, !flIn.value ? '' : /^\d{2,3}$/.test(flIn.value.trim()) ? 'man' : 'bad');
       });
       const revised = !!base;
+      root.dataset.mpShift = String(destShift);
+      root.dataset.mpRev = revised ? '1' : '';
       dests.forEach((h) => {
         if (!h.dataset.in) return;
         const t = new Date(Number(h.dataset.in) + destShift);
