@@ -231,7 +231,7 @@
     // ATC flight plan remarks: equipment line + item 18 + field elevations
     const fpl = str(ofp.atc?.flightplan_text).replace(/[()]/g, '');
     const segs = fpl.split(/\s*\n?-\s*(?=[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
-    const item10 = segs.find((x) => /^[A-Z0-9]{2,4}\/[LMHJ]-\S+/.test(x)) || (o.icaoType && ac.equip ? `${o.icaoType}/${up(ac.wake || 'M')}-${up(ac.equip)}` : '');
+    const item10 = segs.find((x) => /^[A-Z0-9]{2,4}\/[LMHJ]-\S+/.test(x)) || (o.icaoType && ac.equip ? `${o.icaoType}/${/^[LMHJ]-/.test(up(ac.equip)) ? '' : `${up(ac.wake || 'M')}-`}${up(ac.equip)}` : '');
     const item18 = str(ofp.atc?.section18) || segs.filter((x) => /^[A-Z]{2,4}\//.test(x) && !/^[A-Z0-9]{2,4}\/[LMHJ]-/.test(x)).pop() || '';
     const wrap = (txt, w = 55) => {
       const out = []; let line = '';
