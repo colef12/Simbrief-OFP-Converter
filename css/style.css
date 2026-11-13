@@ -222,10 +222,25 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-dri.unread { border-left-color: #4e86ff; }
 .mp-dri:hover { background: #355299; }
 .mp-dric { flex: none; width: 1.7em; height: 1.7em; }
-.mp-docview { position: absolute; inset: 0; z-index: 4; background: var(--mp-bg); }
-.mp-dvh { display: flex; align-items: center; gap: .6em; padding: 1em 1.4em; background: var(--mp-bar); font-size: 1.25em; }
-.mp-dvx { background: none; border: 0; color: #dbe4f7; cursor: pointer; } .mp-dvx .mp-ico { width: 1.4em; height: 1.4em; }
-.mp-dvb { padding: 2em 1.4em; color: var(--mp-dim); }
+.mp-docview { position: absolute; inset: 0; z-index: 4; overflow-y: auto; background: #111a30; padding: 1.2em 1.1em 6em 1.6em; }
+.mp-dvt { margin: .3em 0 1.6em; font: 600 1.75em var(--mp-sans); color: #fff; }
+.mp-dvwrap { display: flex; gap: .9em; align-items: flex-start; }
+.mp-dvb { flex: 1; min-width: 0; }
+.mp-dvempty { color: var(--mp-dim); padding: 1em .3em; }
+.mp-dvtools { display: flex; flex-direction: column; gap: .7em; }
+.mp-tool { display: grid; place-items: center; width: 4.2em; height: 4.2em; background: #4a5b8c; border-radius: 3px; color: #dbe4f7; cursor: pointer; }
+.mp-tool .mp-ico { width: 2.1em; height: 2.1em; }
+.mp-dvnav { position: absolute; right: 2.4em; bottom: 1.6em; display: flex; flex-direction: column; gap: .5em; }
+.mp-screen.doc-open .mp-tab.on:not(.docon) { background: transparent; }
+.mp-tab.docon { background: var(--mp-blue); color: #fff; }
+.mp-alts[data-mp-doc] { cursor: pointer; }
+.mp-as { background: #3f4a6b; border-radius: 2px; padding: .7em .6em .9em; }
+.mp-ash { text-align: center; font-size: 1.2em; color: #fff; margin-bottom: .7em; }
+.mp-asrow { display: grid; grid-template-columns: 1.1fr 2.6fr .7fr .9fr 1.1fr 1fr; align-items: start; text-align: center; }
+.mp-asrow b { display: block; font-weight: 600; font-size: 1.2em; color: #fff; }
+.mp-asrow .c-alt { text-align: left; } .mp-asrow b.g { color: #8fe388; } .mp-asrow b.nm { font-size: 1.05em; }
+.mp-ascols { font-size: .85em; color: #dbe4f7; margin-bottom: .1em; }
+.mp-asnone { text-align: center; padding: .6em; color: var(--mp-dim); }
 .tabs a.on { color: var(--text); border-color: var(--accent); }
 .mp-nlhead { display: flex; align-items: center; gap: 1.2em; padding: 1.1em 1.4em .6em; }
 .mp-nltitle { font-size: 1.45em; }

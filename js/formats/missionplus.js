@@ -40,6 +40,10 @@
     dtxt: '<path d="M5 2.5h10l4 4v15H5z"/><path d="M15 2.5v4h4"/><rect x="2.5" y="8" width="13" height="6" rx="1" fill="currentColor" stroke="none"/><text x="9" y="12.6" font-size="4.4" font-weight="700" text-anchor="middle" fill="#2e4a8f" stroke="none" font-family="sans-serif">TXT</text><path d="M8 17.5h8"/>',
     dimg: '<rect x="3" y="3" width="18" height="18" rx="1.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M3 18l5.5-6 4 4 3-3 5.5 5"/>',
     close: '<path d="M6 6l12 12M18 6L6 18"/>',
+    expand: '<path d="M4 9V4h5M4 4l6 6M20 9V4h-5M20 4l-6 6M4 15v5h5M4 20l6-6M20 15v5h-5M20 20l-6-6"/>',
+    mapdoc: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 10l3 2 3-3M9 15l3-2 3 3"/>',
+    up: '<path d="M6 15l6-6 6 6"/>',
+    down: '<path d="M6 9l6 6 6-6"/>',
     eye: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 20L20 4"/>',
     sun: '<circle cx="9" cy="9" r="3"/><path d="M9 2v2M2 9h2M4 4l1.4 1.4M14 4l-1.4 1.4"/><path d="M8 19h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.4 1.6A2.8 2.8 0 0 0 8 19z"/>',
     swap: '<path d="M3 9h14l-3-3M21 15H7l3 3"/>',
@@ -139,6 +143,41 @@
     };
   }
 
+  // Documents that have content; any other drawer button shows an empty page with its title
+  function docPages(m) {
+    const { o } = m;
+    const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    const altRows = o.alts.map((a) => {
+      const r = a.raw || {};
+      const ete = secs(r.ete);
+      const eta = m.eOn && ete ? new Date(m.eOn.getTime() + ete * 1000) : null;
+      const fl = num(r.cruise_altitude) ? Z(Math.round(num(r.cruise_altitude) / 100), 3) : '-';
+      return `
+        <div class="mp-asrow">
+          <div class="c-alt"><b>*${esc(a.icao)}*</b><b>${esc(a.iata || a.code || '')}</b></div>
+          <div class="c-dist"><b>${num(r.distance) ? Math.round(num(r.distance)) : '-'}</b><b class="nm">${esc(a.name || '')}</b></div>
+          <div><b>${esc(fl)}</b></div>
+          <div><b>${ete ? esc(hmm(ete)) : '-'}</b></div>
+          <div><b class="g">${eta ? `${esc(zt(eta))}` : '-'}</b></div>
+          <div><b>${str(r.burn) ? o.W(r.burn) : '-'}</b></div>
+        </div>`;
+    }).join('');
+    return {
+      'inflight:altsum': {
+        title: 'Alternates Summary',
+        html: `
+      <div class="mp-as">
+        <div class="mp-ash">Destination Alternates Summary</div>
+        <div class="mp-asrow mp-ascols"><div class="c-alt">Alternate</div><div class="c-dist">Distance (NM)</div><div>FL</div><div>Time</div><div>ETA</div><div>Trip (lb)</div></div>
+        ${altRows || '<div class="mp-asnone">NO ALTERNATE PLANNED</div>'}
+      </div>`,
+      },
+    };
+  }
+  function docTemplates(m) {
+    return Object.entries(docPages(m)).map(([id, d]) => `<template data-mp-doctpl="${id}" data-title="${esc(d.title)}">${d.html}</template>`).join('');
+  }
+
   function drawers(m) {
     const menus = drawerMenus(m);
     return Object.entries(menus).map(([key, secs]) => `
@@ -182,9 +221,14 @@ ${body}
     <div class="mp-scrim" hidden></div>
     ${drawers(m)}
     <div class="mp-docview" hidden>
-      <div class="mp-dvh"><b class="mp-dvt"></b><span class="mp-grow"></span><button type="button" class="mp-dvx" aria-label="Close">${ico('close')}</button></div>
-      <div class="mp-dvb">This document isn't built yet in the converter.</div>
+      <h2 class="mp-dvt"></h2>
+      <div class="mp-dvwrap">
+        <div class="mp-dvb"></div>
+        <div class="mp-dvtools"><span class="mp-tool">${ico('expand')}</span><span class="mp-tool">${ico('mapdoc')}</span></div>
+      </div>
+      <div class="mp-dvnav"><span class="mp-tool" data-mp-dvscroll="-1">${ico('up')}</span><span class="mp-tool" data-mp-dvscroll="1">${ico('down')}</span></div>
     </div>
+    ${docTemplates(m)}
   </div>
 </div></div>`;
   }
@@ -229,7 +273,7 @@ ${body}
       <div>TLW <b>${esc(zt(tlwFrom))} -${esc(zt(m.eOn))}</b></div>
       <div>LDG <b>${esc(zt(m.eOn))}</b></div>
     </div>
-    <div class="mp-alts">ALL ALTERNATES (${o.alts.length})</div>
+    <div class="mp-alts" data-mp-doc="inflight:altsum" role="button" tabindex="0">ALL ALTERNATES (${o.alts.length})</div>
   </div>
 
   <div class="mp-fuel">
@@ -452,25 +496,39 @@ ${body}
       }
       const item = e.target.closest('[data-mp-doc]');
       if (item) {
-        readStore.mark(screen.dataset.flight, item.dataset.mpDoc);
+        const id = item.dataset.mpDoc;
+        readStore.mark(screen.dataset.flight, id);
         refreshDrawers(root);
         closeDrawers(screen);
         const dv = screen.querySelector('.mp-docview');
-        dv.querySelector('.mp-dvt').textContent = item.querySelector('span').textContent;
+        const tpl = screen.querySelector(`template[data-mp-doctpl="${id}"]`);
+        const label = screen.querySelector(`.mp-dri[data-mp-doc="${id}"] span`);
+        dv.querySelector('.mp-dvt').textContent = tpl?.dataset.title || (label ? label.childNodes[0].textContent.trim() : '');
+        const body = dv.querySelector('.mp-dvb');
+        body.replaceChildren();
+        if (tpl) body.appendChild(tpl.content.cloneNode(true));
+        else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
         dv.hidden = false;
+        dv.scrollTop = 0;
+        screen.classList.add('doc-open');
+        screen.querySelectorAll('[data-mp-tab]').forEach((t) => t.classList.toggle('docon', t.dataset.mpTab === id.split(':')[0]));
         return true;
       }
-      if (e.target.closest('.mp-dvx')) { screen.querySelector('.mp-docview').hidden = true; return true; }
+      const dvs = e.target.closest('[data-mp-dvscroll]');
+      if (dvs) { const dv = screen.querySelector('.mp-docview'); dv.scrollBy({ top: Number(dvs.dataset.mpDvscroll) * dv.clientHeight * 0.8, behavior: 'smooth' }); return true; }
       if (e.target.closest('.mp-scrim') || e.target.closest('[data-mp-page]')) {
         closeDrawers(screen);
-        if (e.target.closest('[data-mp-page]')) root.querySelectorAll('.mp-docview').forEach((d) => { d.hidden = true; });
+        if (e.target.closest('[data-mp-page]')) {
+          root.querySelectorAll('.mp-docview').forEach((d) => { d.hidden = true; });
+          root.querySelectorAll('.mp-screen').forEach((sc) => { sc.classList.remove('doc-open'); sc.querySelectorAll('.docon').forEach((t) => t.classList.remove('docon')); });
+        }
       }
       return false;
     };
     root.addEventListener('click', act);
     root.addEventListener('keydown', (e) => {
       if (e.key === 'Escape') root.querySelectorAll('.mp-screen').forEach(closeDrawers);
-      else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-mp-tab]') && act(e)) e.preventDefault();
+      else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-mp-tab], [data-mp-doc]') && act(e)) e.preventDefault();
     });
   }
 
