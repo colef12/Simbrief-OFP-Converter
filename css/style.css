@@ -192,7 +192,15 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-ct { font-size: 1.1em; font-weight: 700; } .mp-card small { color: var(--mp-dim); }
 .mp-cv { font-size: 1.05em; font-weight: 600; color: #dbe4f7; margin-top: .3em; }
 .mp-cc { color: var(--mp-dim); margin: .3em 0 .5em; }
-.mp-crew { max-height: 6.3em; overflow-y: auto; }
+.mp-crew { max-height: 6.3em; overflow-y: auto; padding-right: 1.6em; overscroll-behavior: contain; }
+/* Mission+ scrollbars: a thin white rounded thumb, no track or arrows (as on the iPad) */
+.mp-crew::-webkit-scrollbar, .mp-nllist::-webkit-scrollbar, .mp-drawer::-webkit-scrollbar, .mp-docview::-webkit-scrollbar { width: 6px; height: 6px; }
+.mp-crew::-webkit-scrollbar-track, .mp-nllist::-webkit-scrollbar-track, .mp-drawer::-webkit-scrollbar-track, .mp-docview::-webkit-scrollbar-track { background: transparent; margin: .4em 0; }
+.mp-crew::-webkit-scrollbar-thumb, .mp-nllist::-webkit-scrollbar-thumb, .mp-drawer::-webkit-scrollbar-thumb, .mp-docview::-webkit-scrollbar-thumb { background: #e9eefb; border-radius: 3px; min-height: 2.2em; }
+.mp-crew::-webkit-scrollbar-button, .mp-nllist::-webkit-scrollbar-button, .mp-drawer::-webkit-scrollbar-button, .mp-docview::-webkit-scrollbar-button { display: none; width: 0; height: 0; }
+@supports not selector(::-webkit-scrollbar) {
+  .mp-crew, .mp-nllist, .mp-drawer, .mp-docview { scrollbar-width: thin; scrollbar-color: #e9eefb transparent; }
+}
 .mp-person { display: flex; align-items: center; gap: .6em; padding: .35em 0; border-top: 1px solid var(--mp-line); }
 .mp-pi { width: 1.6em; height: 1.6em; } .mp-pn { font-weight: 600; } .mp-pr { font-size: .85em; color: var(--mp-dim); }
 .mp-ac { display: flex; flex-direction: column; gap: .55em; } .mp-ac .mp-card { flex: 1; min-height: 0; }
@@ -261,7 +269,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nlcols span + span { border-left: 1px solid var(--mp-line); padding-left: .5em; }
 .mp-nlcols sup, .mp-legd sup { font-size: .65em; }
 .mp-nlwrap { position: relative; display: flex; }
-.mp-nllist { flex: 1; height: 128cqw; overflow-y: auto; padding: 0 .6em 1em .4em; margin-left: .6em; background: linear-gradient(#3ed38a, #3ed38a) 1.4em 0 / 2px 100% no-repeat local; scrollbar-color: #9fb2da transparent; }
+.mp-nllist { flex: 1; height: 128cqw; overflow-y: auto; padding: 0 .6em 1em .4em; margin-left: .6em; background: linear-gradient(#3ed38a, #3ed38a) 1.4em 0 / 2px 100% no-repeat local; }
 .mp-nlside { display: flex; flex-direction: column; gap: .6em; padding: 0 .6em .6em; }
 .mp-sbtn { display: inline-flex; align-items: center; justify-content: center; width: 3.2em; height: 3.2em; background: #24365f; border-radius: 3px; color: #e9eefb; cursor: pointer; }
 .mp-sbtn .mp-ico { width: 2em; height: 2em; }
