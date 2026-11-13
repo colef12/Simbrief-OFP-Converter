@@ -27,6 +27,9 @@
     route: '<circle cx="6" cy="18" r="2"/><circle cx="18" cy="6" r="2"/><path d="M8 17c6-1 2-8 8-10"/>',
     bell: '<path d="M6 16V11a6 6 0 0 1 12 0v5l2 2H4z"/><path d="M10 20a2 2 0 0 0 4 0"/>',
     mark: '<path d="M7 3h10v18l-5-4-5 4z"/>',
+    eyeo: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/>',
+    filter: '<path d="M3 4h18l-7 9v6l-4 2v-8z"/>',
+    cal: '<rect x="4" y="5" width="16" height="15" rx="1"/><path d="M4 10h16M8 3v4M16 3v4"/>',
     more: '<circle cx="12" cy="5" r="1.4"/><circle cx="12" cy="12" r="1.4"/><circle cx="12" cy="19" r="1.4"/>',
     home: '<path d="M4 11l8-7 8 7v9h-5v-6H9v6H4z"/>',
     prep: '<path d="M5 20V8l7-4 7 4v12"/><path d="M9 20v-6h6v6M9 10h6"/>',
@@ -170,6 +173,15 @@
     const docs = {};
     if (m.etops) docs['inflight:etops'] = { title: 'ETOPS', html: etopsPage(m) };
     docs['prep:finfo'] = { title: 'Flight Information', html: flightInfoPage(m) };
+    const O = o.origin, D = o.dest;
+    const enr = asArray(o.raw.notams?.notamdrec);
+    const altSecs = o.alts.filter(Boolean).map((a) => ({ title: 'Alternate Airport', port: a, list: a.notams }));
+    const enrSec = enr.length ? [{ title: 'Enroute', port: null, list: enr }] : [];
+    docs['notam:onotam'] = { title: 'Origin NOTAMs', kind: 'notam', html: notamPage(m, [{ title: 'Origin Airport', port: O, list: O?.notams || [] }]) };
+    docs['notam:aenotam'] = { title: 'Alternate & Enroute NOTAMs', kind: 'notam', html: notamPage(m, [...altSecs, ...enrSec]) };
+    docs['notam:dnotam'] = { title: 'Destination NOTAMs', kind: 'notam', html: notamPage(m, [{ title: 'Destination Airport', port: D, list: D?.notams || [] }]) };
+    docs['notam:allnotam'] = { title: 'All NOTAMs', kind: 'notam', html: notamPage(m, [
+      { title: 'Origin Airport', port: O, list: O?.notams || [] }, { title: 'Destination Airport', port: D, list: D?.notams || [] }, ...altSecs, ...enrSec]) };
     docs['prep:fmsinit'] = { title: 'FMS Initialization', html: fmsInitPage(m) };
     docs['prep:faddl'] = { title: 'Flight Additional Information', html: flightAddlPage(m) };
     return {
@@ -310,6 +322,149 @@
         <div class="mp-fisub">MEL/CDL Information</div>
         <pre class="mp-fipre">${esc(melLines.join('\n'))}</pre>
       </div>`;
+  }
+
+  // NOTAM pages (per Cole's screen recording of KATL Origin NOTAMs): a sticky "Origin Airport  KATL/ATL"
+  // bar; general NOTAMs first, then one "Impacted Runway <rwy>" group per runway named in the text,
+  // each split into sub-groups (Runway, ApproachProcedures …). Cards: id | From … To … | days in effect,
+  // priority ring + ⋮ menu (Undefined/Low/Medium/High), bookmark, blue bar while unviewed.
+  const NOTAM_BOLD = /\b(AD|RWY|TWY|ILS|LOC|RNAV|VNAV|VOR|DME|NDB|CRANES?|OBST|APN|TACAN)\b/g;
+  const NOTAM_WARN = /(U\/S|\bINOP\b|\bCLSD\b|\bUNSERVICEABLE\b)/g;
+  function notamPage(m, sections) {
+    const DAY = 86400e3;
+    const nd = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${d.getUTCFullYear()} ${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}` : '');
+    const rw = (x) => { const mt = /^0?(\d{1,2})([LRC]?)$/.exec(x); return mt ? `${Z(Number(mt[1]), 2)}${mt[2]}` : x; };
+    const sub = (n, txt) => {
+      const q = up(n.notam_qcode).replace(/^Q/, '');
+      if (/^(P|I[CDGLMSTUWXY])/.test(q) || /\bIAP\b|\b(ILS|LOC|RNAV|GLS|LPV)\b.*\bRWY\b|\bAPCH\b|\bSID\b|\bSTAR\b/.test(txt)) return /\bSID\b|\bODP\b|\bDP\b/.test(txt) ? 'DepartureProcedures' : 'ApproachProcedures';
+      if (n.notam_is_obstacle === true || n.notam_is_obstacle === '1' || /^O/.test(q) || /\bOBST\b|\bCRANE/.test(txt)) return 'Obstacles';
+      if (/^M[RDTU]|^L/.test(q) || /\bRWY\b/.test(txt)) return 'Runway';
+      if (/^M[XNY]/.test(q) || /\bTWY\b/.test(txt)) return 'Taxiway';
+      if (/^MA|^MP|^MK/.test(q) || /\bAPN\b|\bRAMP\b/.test(txt)) return 'Apron';
+      if (/^N/.test(q) || /\b(VOR|NDB|DME|TACAN)\b/.test(txt)) return 'Navaids';
+      if (/^[AR]/.test(q)) return 'Airspace';
+      if (/^S/.test(q)) return 'Services';
+      return 'Airport';
+    };
+    const card = (n) => {
+      const txt = up(str(n.notam_text) || str(n.notam_raw)).trim();
+      const id = up(n.notam_id);
+      const eff = date(n.date_effective), exp = date(n.date_expire);
+      const perm = !exp || /PERM/.test(up(n.date_expire));
+      const days = eff ? Math.floor((m.now - eff) / DAY) : null;
+      const dtxt = days == null ? '' : days === 0 ? '<b>Today</b>' : days < 0 ? `In ${-days} Days` : `${days} Days`;
+      const body = esc(txt).replace(NOTAM_BOLD, '<b>$1</b>').replace(NOTAM_WARN, '<em>$1</em>');
+      return `
+        <div class="mp-nc" data-nid="${esc(id)}">
+          <div class="mp-nch"><span>${esc(id.replace(/^([A-Z])(\d)/, '$1 $2'))}</span><i></i>${ico('cal', 'mp-ncal')}<span>From ${esc(nd(eff))} To ${perm ? 'PERM' : esc(nd(exp))}${n.date_expire_is_estimated === true || n.date_expire_is_estimated === '1' ? ' EST' : ''}</span>${dtxt ? `<i></i><span class="mp-ndays">${dtxt}</span>` : ''}
+            <span class="mp-grow"></span><span class="mp-npri" role="button" tabindex="0" title="Priority"></span><i class="tall"></i><span class="mp-nkb" role="button" tabindex="0">${ico('more')}</span>
+            <div class="mp-nmenu" hidden>${['Undefined', 'Low', 'Medium', 'High'].map((p) => `<div data-pri="${p.toLowerCase()}"><span class="mp-npri" data-p="${p.toLowerCase()}"></span>${p}</div>`).join('')}</div></div>
+          <div class="mp-ncb"><div class="mp-nct">${body}</div><span class="mp-nbm" role="button" tabindex="0">${ico('mark')}</span></div>
+        </div>`;
+    };
+    const ORDER = ['Airport', 'Runway', 'Taxiway', 'Apron', 'ApproachProcedures', 'DepartureProcedures', 'Navaids', 'Obstacles', 'Airspace', 'Services'];
+    const groupHtml = (items, rwy) => {
+      const by = {};
+      items.forEach((n) => { (by[n._sub] = by[n._sub] || []).push(n); });
+      return ORDER.filter((k) => by[k]).map((k) => `
+        <div class="mp-nsub"><div class="mp-nsubh"><span>${k}</span><span class="r">${esc(rwy || '')}</span></div>${by[k].map(card).join('')}</div>`).join('');
+    };
+    let total = 0;
+    const secHtml = sections.map((sec) => {
+      const list = asArray(sec.list).filter((n) => n && (str(n.notam_text) || str(n.notam_raw)));
+      total += list.length;
+      const general = [], byRwy = {};
+      list.forEach((n) => {
+        const txt = up(str(n.notam_text) || str(n.notam_raw));
+        n._sub = sub(n, txt);
+        const rws = [...new Set([...txt.matchAll(/\bRWY\s+(\d{1,2}[LRC]?)(?=[\s\/,.]|$)|\bRW(\d{2}[LRC]?)\b/g)].map((x) => rw(x[1] || x[2])))];
+        if (!rws.length) general.push(n);
+        rws.forEach((r) => { (byRwy[r] = byRwy[r] || []).push(n); });
+      });
+      const rKeys = Object.keys(byRwy).sort((a, b) => parseInt(a, 10) - parseInt(b, 10) || a.localeCompare(b));
+      const port = sec.port ? `${sec.port.icao}/${sec.port.iata || sec.port.code}` : (list[0] ? up(list[0].location_icao) : '');
+      return `
+      <section class="mp-nsec">
+        <div class="mp-nsech"><span>${esc(sec.title)}</span><span>${esc(port)}</span></div>
+        ${general.length ? groupHtml(general, '') : ''}
+        ${rKeys.map((r) => `<div class="mp-nrwy"><span>Impacted Runway</span><span class="y">${esc(r)}</span></div>${groupHtml(byRwy[r], r)}`).join('')}
+        ${list.length ? '' : '<div class="mp-nnone">NO NOTAMS</div>'}
+      </section>`;
+    }).join('');
+    return `<div class="mp-notams" data-total="${total}">${secHtml}</div>`;
+  }
+
+  // NOTAM page behaviour: unviewed count (a card counts as viewed once fully on screen), priority menu,
+  // bookmarks, sticky sub-headers that pick up the runway once stuck. Saved per flight ('mp.notam').
+  const NOTAM_KEY = 'mp.notam';
+  const notamStore = {
+    all() { try { return JSON.parse(localStorage.getItem(NOTAM_KEY)) || {}; } catch { return {}; } },
+    get(f) { const a = this.all()[f] || {}; return { v: a.v || {}, p: a.p || {}, b: a.b || {} }; },
+    put(f, d) { const all = this.all(); all[f] = d; try { localStorage.setItem(NOTAM_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ } },
+  };
+  function wireNotams(screen, dv, body) {
+    const wrap = body.querySelector('.mp-notams');
+    const title = dv.querySelector('.mp-dvt');
+    title.querySelector('.mp-dvcount')?.remove();
+    if (!wrap) return;
+    const flight = screen.dataset.flight;
+    const st = notamStore.get(flight);
+    const cards = [...wrap.querySelectorAll('.mp-nc')];
+    const ids = [...new Set(cards.map((c) => c.dataset.nid))];
+    const count = document.createElement('small');
+    count.className = 'mp-dvcount';
+    title.appendChild(count);
+    const paint = () => {
+      cards.forEach((c) => {
+        const id = c.dataset.nid;
+        c.classList.toggle('unv', !st.v[id]);
+        c.querySelector('.mp-nch > .mp-npri').dataset.p = st.p[id] || '';
+        c.querySelector('.mp-nbm').classList.toggle('on', !!st.b[id]);
+      });
+      const unv = ids.filter((id) => !st.v[id]).length;
+      count.textContent = ` ${ids.length}/${ids.length} results (${unv} Unviewed)`;
+    };
+    paint();
+    const save = () => notamStore.put(flight, st);
+    // viewed = whole card inside the visible part of the page (checked on scroll, settles after 0.6 s)
+    let tmr = null;
+    const check = () => {
+      const vr = dv.getBoundingClientRect();
+      let changed = false;
+      cards.forEach((c) => {
+        if (st.v[c.dataset.nid]) return;
+        const r = c.getBoundingClientRect();
+        if (r.height && r.top >= vr.top + 40 && r.bottom <= vr.bottom) { st.v[c.dataset.nid] = 1; c.classList.add('seen'); changed = true; }
+      });
+      if (changed) { save(); setTimeout(paint, 700); }
+      // sticky sub-headers: show the runway on the one that is stuck
+      const top = wrap.querySelector('.mp-nsech')?.getBoundingClientRect().bottom || vr.top;
+      wrap.querySelectorAll('.mp-nsubh').forEach((h) => h.classList.toggle('stuck', h.getBoundingClientRect().top <= top + 1 && h.parentElement.getBoundingClientRect().bottom > top + h.offsetHeight));
+    };
+    const onScroll = () => { clearTimeout(tmr); tmr = setTimeout(check, 250); };
+    if (dv._notamScroll) dv.removeEventListener('scroll', dv._notamScroll);
+    dv._notamScroll = onScroll;
+    dv.addEventListener('scroll', onScroll);
+    setTimeout(check, 600);
+    wrap.addEventListener('click', (e) => {
+      const card = e.target.closest('.mp-nc');
+      if (!card) return;
+      const id = card.dataset.nid;
+      const menu = card.querySelector('.mp-nmenu');
+      const opt = e.target.closest('[data-pri]');
+      if (opt) {
+        const p = opt.dataset.pri;
+        if (p === 'undefined') delete st.p[id]; else st.p[id] = p;
+        menu.hidden = true; save(); paint(); e.stopPropagation(); return;
+      }
+      if (e.target.closest('.mp-nkb') || e.target.closest('.mp-nch > .mp-npri')) {
+        const open = menu.hidden;
+        wrap.querySelectorAll('.mp-nmenu').forEach((x) => { x.hidden = true; });
+        menu.hidden = !open; e.stopPropagation(); return;
+      }
+      if (e.target.closest('.mp-nbm')) { if (st.b[id]) delete st.b[id]; else st.b[id] = 1; save(); paint(); return; }
+      wrap.querySelectorAll('.mp-nmenu').forEach((x) => { x.hidden = true; });
+    });
   }
 
   // Flt Prep > FMS Initialization (per Cole's DAL0183 A333 screenshot). The top mirrors the aircraft's
@@ -518,7 +673,7 @@
       ${etpText ? `<div class="mp-as mp-etptext"><div class="mp-etplbl">ETP:</div><pre>${esc(etpText)}</pre></div>` : ''}`;
   }
   function docTemplates(m) {
-    return Object.entries(docPages(m)).map(([id, d]) => `<template data-mp-doctpl="${id}" data-title="${esc(d.title)}">${d.html}</template>`).join('');
+    return Object.entries(docPages(m)).map(([id, d]) => `<template data-mp-doctpl="${id}" data-title="${esc(d.title)}"${d.kind ? ` data-kind="${d.kind}"` : ''}>${d.html}</template>`).join('');
   }
 
   function drawers(m) {
@@ -568,7 +723,7 @@ ${body}
       <h2 class="mp-dvt"></h2>
       <div class="mp-dvwrap">
         <div class="mp-dvb"></div>
-        <div class="mp-dvtools"><span class="mp-tool">${ico('expand')}</span><span class="mp-tool">${ico('mapdoc')}</span></div>
+        <div class="mp-dvtools"><span class="mp-tool mp-t-notam mp-t-filter">${ico('filter')}</span><span class="mp-tool">${ico('expand')}</span><span class="mp-tool mp-t-doc">${ico('mapdoc')}</span><span class="mp-tool mp-t-notam mp-t-all" role="button" tabindex="0">${ico('eyeo')}<small>ALL</small></span></div>
       </div>
       <div class="mp-dvnav"><span class="mp-tool" data-mp-dvscroll="-1">${ico('up')}</span><span class="mp-tool" data-mp-dvscroll="1">${ico('down')}</span></div>
     </div>
@@ -853,7 +1008,8 @@ ${body}
         dv.querySelector('.mp-dvt').textContent = tpl?.dataset.title || (label ? label.childNodes[0].textContent.trim() : '');
         const body = dv.querySelector('.mp-dvb');
         body.replaceChildren();
-        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); }
+        dv.dataset.kind = tpl?.dataset.kind || '';
+        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); wireNotams(screen, dv, body); }
         else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
         dv.hidden = false;
         dv.scrollTop = 0;

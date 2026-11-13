@@ -290,6 +290,44 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-fatlw { display: grid; grid-template-columns: auto auto auto auto auto auto; justify-content: start; gap: 0 1.6em; padding-left: 3em; align-items: start; }
 .mp-fatlw span { color: #e6ebf7; } .mp-fatlw b { display: block; font-weight: 600; line-height: 1.25; }
 .mp-fanote { margin-top: .7em; font-size: .92em; color: #e6ebf7; }
+/* NOTAM pages */
+.mp-docview .mp-t-notam { display: none; }
+.mp-docview[data-kind="notam"] .mp-t-notam { display: grid; }
+.mp-docview[data-kind="notam"] .mp-t-doc { display: none; }
+.mp-t-filter { background: transparent; border-bottom: 2px solid #4a5b8c; border-radius: 0; height: 3.6em; margin-bottom: .2em; }
+.mp-t-all { grid-template-rows: auto auto; align-content: center; gap: 0; } .mp-t-all small { font-size: .85em; line-height: 1; }
+.mp-t-all .mp-ico { height: 1.6em; }
+.mp-dvcount { font: 400 .55em var(--mp-sans); color: #9aa6c2; }
+.mp-nsech { position: sticky; top: -1.2em; z-index: 3; display: flex; justify-content: space-between; font-weight: 700; font-size: 1.1em; color: #fff; background: #111a30; padding: .6em 0 .3em; }
+.mp-nsub { position: relative; }
+.mp-nsubh { position: sticky; top: 1.15em; z-index: 2; display: flex; justify-content: space-between; font-weight: 700; color: #fff; background: #111a30; padding: .35em 0 .45em 1.6em; font-size: 1.02em; }
+.mp-nsubh .r { visibility: hidden; } .mp-nsubh.stuck .r { visibility: visible; }
+.mp-nrwy { display: flex; justify-content: space-between; font-weight: 700; font-size: 1.05em; color: #fff; margin: 1em 0 0; }
+.mp-nrwy .y { color: #f6d55c; font-size: 1.25em; }
+.mp-nc { position: relative; background: #2b2f3a; border-radius: 3px; margin: 0 0 1.1em; padding: .65em 1.2em .8em 1.5em; }
+.mp-nc::before { content: ''; position: absolute; left: .35em; top: .35em; bottom: .35em; width: 4px; border-radius: 2px; background: #2f8ff0; opacity: 0; transition: opacity .6s; }
+.mp-nc.unv::before { opacity: 1; } .mp-nc.unv.seen::before { opacity: .35; }
+.mp-nch { position: relative; display: flex; align-items: center; gap: .55em; font-size: .78em; color: #9aa6c2; white-space: nowrap; }
+.mp-nch > i { width: 1px; height: 1.1em; background: #5c6479; } .mp-nch > i.tall { height: 2.2em; margin: 0 .3em; }
+.mp-ncal { width: 1.3em; height: 1.3em; }
+.mp-ndays b { font-weight: 400; color: #c9d2e6; font-size: 1.15em; }
+.mp-npri { display: inline-block; width: 1.55em; height: 1.55em; border-radius: 50%; border: 2px solid #e8ecf5; cursor: pointer; flex: none; }
+.mp-npri[data-p="low"] { background: #fff; border-color: #fff; }
+.mp-npri[data-p="medium"] { background: #f6c945; border-color: #f6c945; }
+.mp-npri[data-p="high"] { background: #f39a2b; border-color: #f39a2b; }
+.mp-nkb { cursor: pointer; color: #e8ecf5; } .mp-nkb .mp-ico { width: 1.7em; height: 1.7em; transform: rotate(90deg); }
+.mp-nmenu { position: absolute; right: 0; top: 2.4em; z-index: 6; background: #1b1e25; box-shadow: 0 6px 16px rgba(0,0,0,.5); font-size: 1.15em; color: #e8ecf5; min-width: 9em; padding: .2em 0; }
+.mp-nmenu[hidden] { display: none; }
+.mp-nmenu > div { display: flex; align-items: center; gap: .7em; padding: .55em .9em; cursor: pointer; }
+.mp-nmenu > div:hover { background: #2f8ff0; }
+.mp-nmenu .mp-npri { width: 1.05em; height: 1.05em; }
+.mp-ncb { display: flex; gap: 1em; margin-top: .6em; }
+.mp-nct { flex: 1; font: 500 1.06em/1.45 var(--mp-mono); color: #f2f4f8; white-space: pre-wrap; word-break: break-word; }
+.mp-nct b { font-weight: 700; color: #fff; } .mp-nct em { font-style: normal; font-weight: 700; color: #f39a2b; }
+.mp-nbm { flex: none; cursor: pointer; color: #e8ecf5; margin-right: .1em; } .mp-nbm .mp-ico { width: 1.8em; height: 1.8em; }
+.mp-nbm.on .mp-ico { fill: #e8ecf5; }
+.mp-nnone { color: var(--mp-dim); padding: 1em 1.6em; }
+
 /* FMS Initialization */
 .mp-fms { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.1em; font-family: Arial, Helvetica, sans-serif; color: #fff; margin-bottom: 1.1em; }
 .mp-fmst { text-align: center; font-size: 1.05em; margin-bottom: .2em; }
