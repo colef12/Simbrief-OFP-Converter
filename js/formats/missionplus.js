@@ -629,7 +629,7 @@ ${body}
     });
     const rows = [...list.querySelectorAll('.mp-nlrow')];
     const hhmmOf = (d) => `${Z(d.getUTCHours(), 2)}:${Z(d.getUTCMinutes(), 2)}`;
-    const sgnHm = (min) => `${min < 0 ? '-' : '+'}${Z(Math.floor(Math.abs(min) / 60), 2)}:${Z(Math.abs(min) % 60, 2)}`;
+    const sgnHm = (min) => `${min < 0 ? '-' : min > 0 ? '+' : ''}${Z(Math.floor(Math.abs(min) / 60), 2)}:${Z(Math.abs(min) % 60, 2)}`;
     // "hhmm" or "hh:mm" -> Date on the day closest to the fix's planned ETA (handles midnight)
     const parse = (v, planned) => {
       const mt = /^([01]\d|2[0-3]):?([0-5]\d)$/.exec(String(v).trim());
