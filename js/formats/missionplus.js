@@ -187,7 +187,8 @@
     const { o } = m;
     const e = m.etops;
     const W = o.W;
-    const hhmm2 = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    // truncated to the minute, like the OFP (3:16:46 -> 03:16)
+    const hhmm2 = (sec) => { const mn = Math.floor(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
     const dm = (v, pos, neg, w) => { const n = num(v), a = Math.abs(n), d = Math.floor(a); return `${n < 0 ? neg : pos}${Z(d, w)}°${((a - d) * 60).toFixed(1).padStart(4, '0')}'`; };
     const apts = {};
     [...asArray(e.suitable_airport), ...o.alts.map((a) => a.raw), o.origin?.raw, o.dest?.raw].filter(Boolean)
