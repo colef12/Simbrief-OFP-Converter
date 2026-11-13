@@ -383,7 +383,8 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-rdet > div { display: grid; grid-template-columns: 1fr auto; gap: .2em .5em; padding: .5em; font-size: .78em; border-radius: 2px; }
 .mp-rdet b, .mp-rdet small { grid-column: 1 / -1; } .mp-rdet em { font-style: normal; font-family: var(--mp-mono); }
 .mp-ropt { background: #22252c; padding: .5em .7em; margin-bottom: .6em; }
-.mp-ropt label { font-size: .9em; color: #dbe4f7; display: flex; gap: .5em; align-items: center; }
+.mp-ropt label { font-size: .9em; color: #dbe4f7; display: flex; gap: .5em; align-items: center; justify-content: flex-start; }
+.mp-ropt input[type=radio] { width: auto; height: auto; margin: 0; flex: none; }
 .mp-ropt summary { color: #9aa6c2; font-size: .8em; cursor: pointer; margin-top: .2em; }
 
 /* NOTAM pages */

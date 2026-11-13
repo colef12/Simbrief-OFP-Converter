@@ -1516,7 +1516,7 @@
     <aside class="mp-drawer" data-mp-drawer="${key}" aria-hidden="true">${secs.map(([title, items]) => `
       ${title ? `<h5 class="mp-drh">${esc(title)}</h5>` : '<div class="mp-drgap"></div>'}
       ${items.map(([id, label, kind, unread, sub]) => (kind === 'note' ? `<p class="mp-drnote">${esc(label)}</p>` : kind === 'act' ? `
-      <button type="button" class="mp-dri mp-dract" data-mp-action="${id.slice(1)}">${ico(id === '!pfr' ? 'post' : 'dxml', 'mp-dric')}<span>${esc(label)}</span></button>` : `
+      <button type="button" class="mp-dri mp-dract" data-mp-action="${id.slice(1)}">${ico('post', 'mp-dric')}<span>${esc(label)}</span></button>` : `
       <button type="button" class="mp-dri${unread ? ' unread' : ''}" data-mp-doc="${key}:${id}" data-default-unread="${unread ? 1 : 0}">
         ${ico(kind === 'img' ? 'dimg' : kind === 'txt' ? 'dtxt' : 'dxml', 'mp-dric')}<span>${esc(label)}${sub ? `<br>${esc(sub)}` : ''}</span>
       </button>`)).join('')}`).join('')}
