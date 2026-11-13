@@ -101,6 +101,8 @@ Renders as an iPad screen instead of a printout. **Dashboard** page: flight ID (
 
 **Nav Log** page (tap the Nav Log tab in the device or the toolbar): origin row plus every SimBrief fix with ETA = planned OFF time + cumulative time (airport row = planned OFF), TCUM, planned fuel remaining (PRMG, klb), planned FL (cruise/TOC/TOD), and leg data between fixes (airway — blank hexagon for SID/STAR legs — distance, time, fuel to nearest 100 lb, Mach). FIR boundaries are marked when SimBrief supplies FIR ids. Up/down buttons page through the list.
 
+**Tab drawers**: Flt Prep, In Flight, NOTAM, Weather and Other Docs slide out a menu of documents over the current page, laid out like the real app (sections and buttons with XML / TXT / image icons). A bright left bar marks an unread document and each tab's badge is its unread count; opening a document marks it read (saved per flight). Documents open a placeholder view for now — content is added page by page. Tap the tab again, tap outside, or press Esc to close.
+
 **Fix details**: tap any fix to slide open its detail panel (blue) — TRMG (time remaining), MSA, IAS, GS, wind, tropopause, latitude/longitude, true/magnetic track, airspace (FIR), name, frequency, remarks, and a Clearance or Notes box saved per flight. Tapping another fix closes the open one; tapping it again closes it. Remarks come from SimBrief's OFP text (e.g. DAL layout `** DAL POSN RPT **`, `** CLIMB TO FL370 **`, FIR and ETOPS lines); fixes that are position reporting points get an **RPT** tag next to the name.
 
 Entries work like the real app and are saved in your browser per flight:

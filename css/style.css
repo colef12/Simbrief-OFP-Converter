@@ -206,6 +206,26 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 
 /* Mission+ · tabs + Nav Log */
 .mp-tab.live { cursor: pointer; } .mp-tab.live:not(.on):hover { background: #26407a; }
+.mp-tab.dr { background: var(--mp-blue); color: #fff; }
+.mp-tab.dr::after { content: ""; position: absolute; bottom: .25em; width: .5em; height: .5em; border: solid #dbe4f7; border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+.mp-screen.dr-open .mp-tab.on:not(.dr) { background: transparent; }
+.mp-stage { position: relative; }
+.mp-scrim { position: absolute; inset: 0; z-index: 5; }
+.mp-drawer { position: absolute; top: 0; bottom: 0; left: 0; z-index: 6; width: 34%; overflow-y: auto; padding: 1em 1.1em 2em 1.2em;
+  background: #182650; border-right: 2px solid #34508f; transform: translateX(-102%); transition: transform .28s ease; visibility: hidden; }
+.mp-drawer.open { transform: none; visibility: visible; }
+.mp-drh { margin: 1.4em 0 .7em; padding: 0 .4em .45em; border-bottom: 2px solid #c9d5f0; font: 400 1.2em var(--mp-sans); color: #e9eefb; }
+.mp-drh:first-child { margin-top: .4em; }
+.mp-drgap { height: .2em; }
+.mp-dri { display: flex; align-items: center; gap: .8em; width: 100%; min-height: 4.4em; margin: 0 0 .55em; padding: .7em 1em; background: #2e4a8f;
+  border: 0; border-left: 5px solid transparent; border-radius: 2px; color: #fff; font: 400 1.2em/1.25 var(--mp-sans); text-align: left; cursor: pointer; }
+.mp-dri.unread { border-left-color: #4e86ff; }
+.mp-dri:hover { background: #355299; }
+.mp-dric { flex: none; width: 1.7em; height: 1.7em; }
+.mp-docview { position: absolute; inset: 0; z-index: 4; background: var(--mp-bg); }
+.mp-dvh { display: flex; align-items: center; gap: .6em; padding: 1em 1.4em; background: var(--mp-bar); font-size: 1.25em; }
+.mp-dvx { background: none; border: 0; color: #dbe4f7; cursor: pointer; } .mp-dvx .mp-ico { width: 1.4em; height: 1.4em; }
+.mp-dvb { padding: 2em 1.4em; color: var(--mp-dim); }
 .tabs a.on { color: var(--text); border-color: var(--accent); }
 .mp-nlhead { display: flex; align-items: center; gap: 1.2em; padding: 1.1em 1.4em .6em; }
 .mp-nltitle { font-size: 1.45em; }

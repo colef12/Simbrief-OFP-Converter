@@ -36,6 +36,10 @@
     wx: '<path d="M7 18h10a4 4 0 0 0 0-8 6 6 0 0 0-11 2 3 3 0 0 0 1 6z"/><path d="M9 4v2M4 9h2M5.5 5.5l1.4 1.4"/>',
     post: '<path d="M3 18h18M5 18l2-6h10l2 6M9 12V8h6v4"/>',
     doc: '<path d="M6 3h9l4 4v14H6z"/><path d="M9 11h7M9 15h7"/>',
+    dxml: '<path d="M5 2.5h10l4 4v15H5z"/><path d="M15 2.5v4h4"/><rect x="2.5" y="8" width="13" height="6" rx="1" fill="currentColor" stroke="none"/><text x="9" y="12.6" font-size="4.4" font-weight="700" text-anchor="middle" fill="#2e4a8f" stroke="none" font-family="sans-serif">XML</text><path d="M8 17.5h8"/>',
+    dtxt: '<path d="M5 2.5h10l4 4v15H5z"/><path d="M15 2.5v4h4"/><rect x="2.5" y="8" width="13" height="6" rx="1" fill="currentColor" stroke="none"/><text x="9" y="12.6" font-size="4.4" font-weight="700" text-anchor="middle" fill="#2e4a8f" stroke="none" font-family="sans-serif">TXT</text><path d="M8 17.5h8"/>',
+    dimg: '<rect x="3" y="3" width="18" height="18" rx="1.5"/><circle cx="8.5" cy="8.5" r="1.8"/><path d="M3 18l5.5-6 4 4 3-3 5.5 5"/>',
+    close: '<path d="M6 6l12 12M18 6L6 18"/>',
     eye: '<path d="M2 12s4-6 10-6 10 6 10 6-4 6-10 6S2 12 2 12z"/><circle cx="12" cy="12" r="2.5"/><path d="M4 20L20 4"/>',
     sun: '<circle cx="9" cy="9" r="3"/><path d="M9 2v2M2 9h2M4 4l1.4 1.4M14 4l-1.4 1.4"/><path d="M8 19h10a3.5 3.5 0 0 0 0-7 5 5 0 0 0-9.4 1.6A2.8 2.8 0 0 0 8 19z"/>',
     swap: '<path d="M3 9h14l-3-3M21 15H7l3 3"/>',
@@ -96,18 +100,63 @@
     };
   }
 
+  // [icon, label, page, drawer]
   const TABS = [
-    ['home', 'Dashboard', 'dashboard'], ['prep', 'Flt Prep'], ['plane', 'In Flight'], ['list', 'Nav Log', 'navlog'],
-    ['folder', 'NOTAM', null, 'notam'], ['wx', 'Weather', null, 'wx'], ['folder', 'Other Docs'], ['post', 'Post Flight'], ['more', 'Others'],
+    ['home', 'Dashboard', 'dashboard'], ['prep', 'Flt Prep', null, 'prep'], ['plane', 'In Flight', null, 'inflight'], ['list', 'Nav Log', 'navlog'],
+    ['folder', 'NOTAM', null, 'notam'], ['wx', 'Weather', null, 'wx'], ['folder', 'Other Docs', null, 'docs'], ['post', 'Post Flight'], ['more', 'Others'],
   ];
+
+  // Tab drawers, as in the real app. [id, label, icon xml|txt|img, unread by default, sub-label]
+  // Unread = bright left bar; a tab's badge = its unread count (matches Cole's photos: 7/2/4/10/1).
+  function drawerMenus(m) {
+    const h = m.eOut ? m.eOut.getUTCHours() : 21;
+    const tpFrom = (Math.ceil((h + 1) / 3) * 3) % 24;
+    const tpWin = `${Z(tpFrom, 2)}Z-${Z((tpFrom + 6) % 24, 2)}Z`;
+    return {
+      prep: [
+        ['Release Acknowledgment', [['fdra', 'FDRA', 'xml', 1, 'To Sign']]],
+        ['General', [['finfo', 'Flight Information', 'xml', 0], ['faddl', 'Flight Additional Information', 'xml', 0], ['loadfuel', 'Load & Fuel', 'xml', 0],
+          ['lfrmk', 'Load & Fuel Remarks', 'xml', 0], ['fprmk', 'Flight Plan Remarks', 'xml', 0], ['corm', 'Company Remarks', 'txt', 0],
+          ['adr', 'Aircraft Discrepancy Report', 'txt', 1], ['gate', 'Gate Message', 'txt', 1]]],
+        ['LATT Calculation', [['fdplatt', 'FDP LATT', 'xml', 1], ['blklatt', 'Block LATT', 'xml', 1]]],
+        ['In Flight Deck', [['fmsinit', 'FMS Initialization', 'xml', 0]]],
+        ['Crew Information', [['crewlist', 'Crew List', 'xml', 1], ['crewconn', 'Crew Connections', 'xml', 1]]],
+      ],
+      inflight: [['Enroute', [['enrinfo', 'Enroute Information', 'xml', 1], ['altsum', 'Alternates Summary', 'xml', 1]]]],
+      notam: [['', [['onotam', 'Origin NOTAMs', 'xml', 1], ['aenotam', 'Alternate & Enroute NOTAMs', 'xml', 1],
+        ['dnotam', 'Destination NOTAMs', 'xml', 1], ['allnotam', 'All NOTAMs', 'xml', 1]]]],
+      wx: [
+        ['Airport Weather', [['owx', 'Origin METAR & TAF', 'xml', 0], ['ewx', 'Enroute METAR & TAF', 'xml', 1], ['dwx', 'Destination METAR & TAF', 'xml', 1],
+          ['awx', 'Alternates METAR & TAF', 'xml', 1], ['atis', 'ATIS', 'xml', 1]]],
+        ['General Weather', [['winds', 'Forecasted Winds & Temp', 'xml', 1], ['fieldc', 'Field Conditions', 'txt', 1]]],
+        ['Threat Plots', [['tp', 'Threat Plots', 'xml', 1], ['tpfcst', `U.S. Fcst TPs ${tpWin}`, 'img', 1], ['tpcur', 'U.S. Current TPs', 'img', 1],
+          ['tpcurf', 'U.S. Curr Fcst TPs', 'img', 1]]],
+      ],
+      docs: [
+        ['Dispatch Information', [['fpadd', 'Flight Plan Addendum', 'txt', 1]]],
+        ['Help', [['aboutfp', 'About Flight Plan', 'xml', 0], ['aboutwx', 'About Airport Weather', 'xml', 0]]],
+      ],
+    };
+  }
+
+  function drawers(m) {
+    const menus = drawerMenus(m);
+    return Object.entries(menus).map(([key, secs]) => `
+    <aside class="mp-drawer" data-mp-drawer="${key}" aria-hidden="true">${secs.map(([title, items]) => `
+      ${title ? `<h5 class="mp-drh">${esc(title)}</h5>` : '<div class="mp-drgap"></div>'}
+      ${items.map(([id, label, kind, unread, sub]) => `
+      <button type="button" class="mp-dri${unread ? ' unread' : ''}" data-mp-doc="${key}:${id}" data-default-unread="${unread ? 1 : 0}">
+        ${ico(kind === 'img' ? 'dimg' : kind === 'txt' ? 'dtxt' : 'dxml', 'mp-dric')}<span>${esc(label)}${sub ? `<br>${esc(sub)}` : ''}</span>
+      </button>`).join('')}`).join('')}
+    </aside>`).join('');
+  }
 
   // Status bar, header and tab bar shared by every page
   function chrome(m, page, body) {
     const { o, alt } = m;
     const O = o.origin || {}, D = o.dest || {};
-    const badge = { notam: m.notams.o + m.notams.e + m.notams.d, wx: [O.metar, D.metar, alt?.metar].filter(Boolean).length };
     return `
-<div class="mp-device"><div class="mp-screen">
+<div class="mp-device"><div class="mp-screen" data-flight="${esc(o.requestId || `${o.callsign}-${O.icao}-${D.icao}`)}">
   <div class="mp-status">
     <div class="mp-st-l"><b>${esc(o.callsign)} ${esc(m.dateTag)}</b> <span class="${m.current ? 'mp-cur' : 'mp-nc'}">${m.current ? 'Current' : 'Not current'}</span> ${esc(o.reg)} ${esc(o.icaoType)}</div>
     <div class="mp-st-r">${esc(zt(m.now))} ${esc(`${m.now.getUTCDate()} ${MON[m.now.getUTCMonth()]} ${m.now.getUTCFullYear()}`)} ${ico('db')} 100 % ${ico('batt')}</div>
@@ -124,12 +173,19 @@
     <span class="mp-hbtn">${ico('more')}</span>
   </div>
 
-  <nav class="mp-tabs">${TABS.map(([k, l, pg, bk]) => {
-    const n = bk ? badge[bk] : 0;
-    const attrs = pg ? ` data-mp-page="${pg}" role="button" tabindex="0"` : '';
-    return `<div class="mp-tab${pg === page ? ' on' : ''}${pg ? ' live' : ''}"${attrs}>${ico(k)}${n ? `<i class="mp-badge">${n}</i>` : ''}<span>${esc(l)}</span></div>`;
+  <nav class="mp-tabs">${TABS.map(([k, l, pg, dr]) => {
+    const attrs = pg ? ` data-mp-page="${pg}" role="button" tabindex="0"` : dr ? ` data-mp-tab="${dr}" role="button" tabindex="0" aria-expanded="false"` : '';
+    return `<div class="mp-tab${pg === page ? ' on' : ''}${pg || dr ? ' live' : ''}"${attrs}>${ico(k)}${dr ? `<i class="mp-badge" data-mp-badge="${dr}" hidden></i>` : ''}<span>${esc(l)}</span></div>`;
   }).join('')}</nav>
+  <div class="mp-stage">
 ${body}
+    <div class="mp-scrim" hidden></div>
+    ${drawers(m)}
+    <div class="mp-docview" hidden>
+      <div class="mp-dvh"><b class="mp-dvt"></b><span class="mp-grow"></span><button type="button" class="mp-dvx" aria-label="Close">${ico('close')}</button></div>
+      <div class="mp-dvb">This document isn't built yet in the converter.</div>
+    </div>
+  </div>
 </div></div>`;
   }
 
@@ -348,7 +404,79 @@ ${body}
   // - RETA at a fix = latest ATA at an EARLIER fix (airport row ATA = actual OFF) + planned
   //   time from that fix; a fix's own ATA does not change its own RETA. Revised RETA = green.
   // - Header destination RETA shifts block-in by the destination row's RETA − ETA.
+  // ---- tab drawers + unread state ----
+  const READ_KEY = 'mp.read';
+  const readStore = {
+    all() { try { return JSON.parse(localStorage.getItem(READ_KEY)) || {}; } catch { return {}; } },
+    get(f) { return this.all()[f] || {}; },
+    mark(f, id) {
+      const all = this.all(); all[f] = { ...(all[f] || {}), [id]: 1 };
+      try { localStorage.setItem(READ_KEY, JSON.stringify(all)); } catch { /* storage unavailable */ }
+    },
+  };
+  function refreshDrawers(root) {
+    root.querySelectorAll('.mp-screen').forEach((screen) => {
+      const read = readStore.get(screen.dataset.flight);
+      screen.querySelectorAll('.mp-dri').forEach((b) => b.classList.toggle('unread', b.dataset.defaultUnread === '1' && !read[b.dataset.mpDoc]));
+      screen.querySelectorAll('[data-mp-badge]').forEach((bd) => {
+        const n = screen.querySelectorAll(`.mp-drawer[data-mp-drawer="${bd.dataset.mpBadge}"] .mp-dri.unread`).length;
+        bd.textContent = n; bd.hidden = !n;
+      });
+    });
+  }
+  function closeDrawers(screen) {
+    screen.querySelectorAll('.mp-drawer.open').forEach((d) => { d.classList.remove('open'); d.setAttribute('aria-hidden', 'true'); });
+    screen.querySelectorAll('[data-mp-tab]').forEach((t) => { t.classList.remove('dr'); t.setAttribute('aria-expanded', 'false'); });
+    screen.classList.remove('dr-open');
+    const scrim = screen.querySelector('.mp-scrim'); if (scrim) scrim.hidden = true;
+  }
+  function wireDrawers(root) {
+    if (root.dataset.mpDrawers) return;
+    root.dataset.mpDrawers = '1';
+    const act = (e) => {
+      const screen = e.target.closest('.mp-screen');
+      if (!screen) return false;
+      const tab = e.target.closest('[data-mp-tab]');
+      if (tab) {
+        const key = tab.dataset.mpTab;
+        const drawer = screen.querySelector(`.mp-drawer[data-mp-drawer="${key}"]`);
+        const wasOpen = drawer.classList.contains('open');
+        closeDrawers(screen);
+        if (!wasOpen) {
+          drawer.classList.add('open'); drawer.setAttribute('aria-hidden', 'false'); drawer.scrollTop = 0;
+          tab.classList.add('dr'); tab.setAttribute('aria-expanded', 'true');
+          screen.classList.add('dr-open');
+          screen.querySelector('.mp-scrim').hidden = false;
+        }
+        return true;
+      }
+      const item = e.target.closest('[data-mp-doc]');
+      if (item) {
+        readStore.mark(screen.dataset.flight, item.dataset.mpDoc);
+        refreshDrawers(root);
+        closeDrawers(screen);
+        const dv = screen.querySelector('.mp-docview');
+        dv.querySelector('.mp-dvt').textContent = item.querySelector('span').textContent;
+        dv.hidden = false;
+        return true;
+      }
+      if (e.target.closest('.mp-dvx')) { screen.querySelector('.mp-docview').hidden = true; return true; }
+      if (e.target.closest('.mp-scrim') || e.target.closest('[data-mp-page]')) {
+        closeDrawers(screen);
+        if (e.target.closest('[data-mp-page]')) root.querySelectorAll('.mp-docview').forEach((d) => { d.hidden = true; });
+      }
+      return false;
+    };
+    root.addEventListener('click', act);
+    root.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') root.querySelectorAll('.mp-screen').forEach(closeDrawers);
+      else if ((e.key === 'Enter' || e.key === ' ') && e.target.matches('[data-mp-tab]') && act(e)) e.preventDefault();
+    });
+  }
+
   function enhance(root) {
+    wireDrawers(root);
+    refreshDrawers(root);
     const list = root.querySelector('.mp-nllist');
     if (!list || list.dataset.wired) return;
     list.dataset.wired = '1';
