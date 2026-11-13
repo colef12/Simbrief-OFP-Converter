@@ -90,6 +90,8 @@
       block: sOut && sIn ? (sIn - sOut) / 1000 : secs(t.sched_block),
       air: secs(t.est_time_enroute),
       intl: o.origin && o.dest && o.origin.icao[0] !== o.dest.icao[0],
+      etops: (ofp.general?.is_etops === '1' || ofp.general?.is_etops === true || !!ofp.etops?.equal_time_point) ? (ofp.etops || {}) : null,
+      tracks: asArray(ofp.tracks?.nat),
       fuel: {
         tow: W(w.est_tow), ldw: W(w.est_ldw), block: W(f.plan_ramp), minTo,
         toc: toc ? W(toc.fuel_plan_onboard) : 0, planLdg, minLdg, delay: Math.max(0, planLdg - minLdg),
@@ -126,7 +128,10 @@
         ['In Flight Deck', [['fmsinit', 'FMS Initialization', 'xml', 0]]],
         ['Crew Information', [['crewlist', 'Crew List', 'xml', 1], ['crewconn', 'Crew Connections', 'xml', 1]]],
       ],
-      inflight: [['Enroute', [['enrinfo', 'Enroute Information', 'xml', 1], ['altsum', 'Alternates Summary', 'xml', 1]]]],
+      inflight: [
+        ['Enroute', [['enrinfo', 'Enroute Information', 'xml', 1], ['altsum', 'Alternates Summary', 'xml', 1], ...(m.etops ? [['etops', 'ETOPS', 'xml', 0]] : [])]],
+        ...(m.tracks.length ? [['Navigation', [['oceanic', 'Oceanic Tracks', 'txt', 1]]]] : []),
+      ],
       notam: [['', [['onotam', 'Origin NOTAMs', 'xml', 1], ['aenotam', 'Alternate & Enroute NOTAMs', 'xml', 1],
         ['dnotam', 'Destination NOTAMs', 'xml', 1], ['allnotam', 'All NOTAMs', 'xml', 1]]]],
       wx: [
@@ -162,7 +167,10 @@
           <div><b>${str(r.burn) ? o.W(r.burn) : '-'}</b></div>
         </div>`;
     }).join('');
+    const docs = {};
+    if (m.etops) docs['inflight:etops'] = { title: 'ETOPS', html: etopsPage(m) };
     return {
+      ...docs,
       'inflight:altsum': {
         title: 'Alternates Summary',
         html: `
@@ -173,6 +181,68 @@
       </div>`,
       },
     };
+  }
+  // ETOPS page: Diversion Information, ETOPS Positions Detail (per ETP), and the OFP's ETP text
+  function etopsPage(m) {
+    const { o } = m;
+    const e = m.etops;
+    const W = o.W;
+    const hhmm2 = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    const dm = (v, pos, neg, w) => { const n = num(v), a = Math.abs(n), d = Math.floor(a); return `${n < 0 ? neg : pos}${Z(d, w)}°${((a - d) * 60).toFixed(1).padStart(4, '0')}'`; };
+    const apts = {};
+    [...asArray(e.suitable_airport), ...o.alts.map((a) => a.raw), o.origin?.raw, o.dest?.raw].filter(Boolean)
+      .forEach((a) => { if (a.icao_code) apts[up(a.icao_code)] = a; });
+    const iata = (icao) => up(apts[up(icao)]?.iata_code) || up(icao).slice(1);
+    const etps = asArray(e.equal_time_point).map((p, i) => {
+      const da = asArray(p.div_airport);
+      const eet = secs(p.elapsed_time);
+      const eta = m.eOff ? new Date(m.eOff.getTime() + eet * 1000) : null;
+      const dt = secs(p.div_time);
+      const deta = eta && dt ? new Date(eta.getTime() + dt * 1000) : null;
+      const gs = (a) => (dt && num(a?.distance) ? Math.round(num(a.distance) / (dt / 3600)) : '-');
+      const fl = num(p.div_altitude) ? Math.round(num(p.div_altitude) / 100) : '-';
+      const cnd = up(p.etops_condition) || '-';
+      const name = `ETP${i + 1} ${da.map((a) => iata(a.icao_code)).join('-')}`;
+      return `
+        <div class="mp-etp">
+          <div class="mp-etprow">
+            <div class="w"><small>ETP</small><b>${esc(name)}</b></div>
+            <div><small>Latitude</small><b>${esc(dm(p.pos_lat, 'N', 'S', 2))}</b></div>
+            <div><small>Longitude</small><b>${esc(dm(p.pos_long, 'E', 'W', 3))}</b></div>
+            <div><small>EET</small><b>${esc(hhmm2(eet))}</b></div>
+            <div><small>ETA</small><b>${eta ? esc(zt(eta)) : '-'}</b></div>
+            <div><small>EFOB (lb)</small><b>${W(p.est_fob)}</b></div>
+            <div></div><div></div>
+          </div>
+          <div class="mp-etprow">
+            <div class="w"><small>Airport</small>${da.map((a, k) => `<b>${k ? '&rarr;' : '&larr;'}${esc(up(a.icao_code))}</b>`).join('')}</div>
+            <div><small>Condition</small>${da.map(() => `<b>${esc(cnd)}</b>`).join('')}</div>
+            <div><small>FL</small>${da.map(() => `<b>${fl}</b>`).join('')}</div>
+            <div><small>GSR/GSA</small>${da.map((a) => `<b>${gs(a)}</b>`).join('')}</div>
+            <div><small>Time</small><b>${dt ? esc(hhmm2(dt)) : '-'}</b></div>
+            <div><small>ETA</small><b>${deta ? esc(zt(deta)) : '-'}</b></div>
+            <div></div>
+            <div class="r"><small>Fuel Required (lb)</small><b>${W(p.critical_fuel)}</b></div>
+          </div>
+        </div>`;
+    }).join('');
+    const html = str(o.raw?.text?.plan_html);
+    let etpText = '';
+    if (html) {
+      const txt = html.replace(/<br\s*\/?>/gi, '\n').replace(/<[^>]+>/g, '').replace(/&nbsp;/g, ' ').replace(/&amp;/g, '&');
+      const mt = txt.match(/\*\*\s*ETP\/ETOPS?\s+INFORMATION\s*\*\*[\s\S]*?(?=\n\s*\*\*\s*[A-Z][A-Z /]+\*\*|\n-{10,}|$)/);
+      if (mt) etpText = mt[0].split('\n').map((l) => l.trim()).join('\n').replace(/\n{3,}/g, '\n\n').trim();
+    }
+    return `
+      <div class="mp-as mp-etops">
+        <div class="mp-ash">Diversion Information (incl. ETOPS)</div>
+        <div class="mp-rule"><span>Rule Time</span><b>${num(e.rule) ? `${Math.round(num(e.rule))} mins` : '-'}</b></div>
+      </div>
+      <div class="mp-as mp-etops">
+        <div class="mp-ash">ETOPS Positions Detail</div>
+        ${etps || '<div class="mp-asnone">NO EQUAL TIME POINTS</div>'}
+      </div>
+      ${etpText ? `<div class="mp-as mp-etptext"><div class="mp-etplbl">ETP:</div><pre>${esc(etpText)}</pre></div>` : ''}`;
   }
   function docTemplates(m) {
     return Object.entries(docPages(m)).map(([id, d]) => `<template data-mp-doctpl="${id}" data-title="${esc(d.title)}">${d.html}</template>`).join('');
@@ -252,7 +322,7 @@ ${body}
     <span class="mp-swap">${ico('swap')}</span>
     <div class="mp-fid">${esc(m.flightId)}</div>
     <span class="mp-grow"></span>
-    <div class="mp-meta"><div>Ops Type</div><small>${m.intl ? 'International' : 'Domestic'}</small></div>
+    <div class="mp-meta"><div>Ops Type</div><small>${m.intl ? 'Flag' : 'Domestic'}</small></div>
     <div class="mp-meta"><div>Status</div><small class="mp-ok">Up to date</small></div>
     <div class="mp-meta"><div>FDRA</div><small>-</small></div>
   </div>
@@ -273,7 +343,7 @@ ${body}
       <div>TLW <b>${esc(zt(tlwFrom))} -${esc(zt(m.eOn))}</b></div>
       <div>LDG <b>${esc(zt(m.eOn))}</b></div>
     </div>
-    <div class="mp-alts" data-mp-doc="inflight:altsum" role="button" tabindex="0">ALL ALTERNATES (${o.alts.length})</div>
+    <div class="mp-alts${m.etops ? ' split' : ''}">${m.etops ? '<div data-mp-doc="inflight:etops" role="button" tabindex="0">ETOPS</div>' : ''}<div data-mp-doc="inflight:altsum" role="button" tabindex="0">ALL ALTERNATES (${o.alts.length})</div></div>
   </div>
 
   <div class="mp-fuel">

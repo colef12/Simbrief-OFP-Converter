@@ -176,7 +176,9 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-dot.o { left: 0; } .mp-dot.d { left: 78%; } .mp-dot.a { left: 100%; background: #2052cc; border: 2px solid #fff; }
 .mp-times { display: flex; justify-content: space-between; gap: .5em; margin: 0 1em; padding: .5em 0; border-top: 1px solid rgba(255,255,255,.35); font-size: .8em; color: #dbe4f7; white-space: nowrap; }
 .mp-times > div + div { border-left: 1px solid rgba(255,255,255,.35); padding-left: .6em; } .mp-times b { font-size: 1.15em; font-weight: 600; color: #fff; }
-.mp-alts { text-align: center; padding: .8em; background: #1d4bbb; font-size: 1.05em; }
+.mp-alts { display: flex; text-align: center; background: #1d4bbb; font-size: 1.05em; }
+.mp-alts > div { flex: 1; padding: .8em; }
+.mp-alts.split > div:first-child { flex: 0 0 30%; border-right: 1px solid rgba(217,225,242,.35); margin: .5em 0; padding: .3em; }
 .mp-fuel { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3em 1em; margin: 0 1em; padding: .7em 1em; background: var(--mp-panel); border-radius: 3px; }
 .mp-fl { color: var(--mp-dim); font-size: 1em; }
 .mp-fv { font: 600 1.15em/1.4 var(--mp-mono); } .mp-fv.g { color: var(--mp-teal); }
@@ -241,7 +243,16 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-dvnav { position: absolute; right: 2.4em; bottom: 1.6em; display: flex; flex-direction: column; gap: .5em; }
 .mp-screen.doc-open .mp-tab.on:not(.docon) { background: transparent; }
 .mp-tab.docon { background: var(--mp-blue); color: #fff; }
-.mp-alts[data-mp-doc] { cursor: pointer; }
+.mp-alts [data-mp-doc] { cursor: pointer; }
+.mp-etops { margin-bottom: .6em; }
+.mp-rule { display: flex; gap: 2em; padding: .2em .2em; font-size: 1.1em; } .mp-rule span { color: #dbe4f7; }
+.mp-etp { border-bottom: 2px solid #c9d5f0; padding: .2em 0 .5em; margin-bottom: .3em; }
+.mp-etprow { display: grid; grid-template-columns: 1.8fr 1fr 1.1fr .8fr .9fr 1fr .6fr 1.3fr; align-items: start; text-align: center; margin-top: .3em; }
+.mp-etprow > div.w { text-align: left; } .mp-etprow > div.r { text-align: right; }
+.mp-etprow small { display: block; font-size: .78em; color: #dbe4f7; }
+.mp-etprow b { display: block; font-weight: 600; font-size: 1.12em; color: #fff; line-height: 1.2; }
+.mp-etptext { padding: .9em 1em 1.4em; } .mp-etplbl { font-size: 1.15em; margin-bottom: .8em; }
+.mp-etptext pre { margin: 0; white-space: pre-wrap; font: 600 1em/1.3 var(--mp-sans); color: #fff; }
 .mp-as { background: #3f4a6b; border-radius: 2px; padding: .7em .6em .9em; }
 .mp-ash { text-align: center; font-size: 1.2em; color: #fff; margin-bottom: .7em; }
 .mp-asrow { display: grid; grid-template-columns: 1.1fr 2.6fr .7fr .9fr 1.1fr 1fr; align-items: start; text-align: center; }
