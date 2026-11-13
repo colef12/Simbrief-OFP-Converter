@@ -101,10 +101,10 @@ main { max-width: none; margin: 0 auto; padding: 24px 16px 60px; }
 .pane .paper { padding: 24px 28px; }
 /* Device formats (Mission+ iPad): the converted pane hugs the iPad and the iPad is sized to fill the
    window's height (or the width left after a 360 px SimBrief pane), keeping its aspect ratio.
-   Device height = 1.738 × (width − 36 px frame) + 36 px; 255 px = header, status, pane head, padding, toolbar. */
+   Device height = 1.738 × (width − 36 px frame) + 36 px; 272 px = header, status, pane head, padding, toolbar. */
 .split:has(.paper.device:not(:empty)) { grid-template-columns: minmax(360px, 1fr) auto; }
 .paper.device .mp-device {
-  width: min(calc(100vw - 480px), calc((100vh - 255px - 36px) / 1.738 + 36px)); max-width: none;
+  width: min(calc(100vw - 480px), calc((100vh - 272px - 36px) / 1.738 + 36px)); max-width: none;
 }
 @media (max-width: 1100px) {
   .split, .split:has(.paper.device:not(:empty)) { grid-template-columns: 1fr; height: auto; }
