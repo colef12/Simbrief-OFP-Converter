@@ -302,6 +302,11 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-fmsp .lk { font-size: 1.1em; }
 .mp-fb { display: inline-block; min-width: 3em; min-height: 1.4em; border: 1.5px solid #e8eaf0; padding: .08em .25em; color: #4fd2e6; font-size: 1.08em; white-space: nowrap; vertical-align: middle; text-align: left; }
 .mp-fb.w3 { min-width: 3.3em; } .mp-fb.w5 { min-width: 5.4em; } .mp-fb.w6 { min-width: 7.4em; } .mp-fb.ra { text-align: right; }
+.mp-fb.ct { text-align: center; } .mp-fb small { font-size: .6em; }
+.mp-cdu > div { min-height: 1.6em; }
+.mp-cdu .mp-fb.w5 { min-width: 6.4em; }
+.mp-cdudash { border-top: 2px dashed #c9ccd4; margin: .9em 1.6em .4em; min-height: 0 !important; }
+.mp-cdu .sp { margin-top: .8em; }
 .mp-fmsfoot { grid-column: 2; text-align: right; font-size: .45em; color: #c9ccd4; margin-top: .2em; }
 .mp-fmsb { background: #22252c; border-radius: 2px; padding: .25em .4em .35em; margin-bottom: .45em; font-family: Arial, Helvetica, sans-serif; color: #fff; line-height: 1.3; }
 .mp-fmsb > b, .mp-fms2 b { color: #c9ccd4; display: block; }

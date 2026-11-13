@@ -197,7 +197,15 @@
     // speeds
     const ci = str(g.costindex);
     const spd = (p) => { const v = up(p); return /^CI/.test(v) ? v.replace(/\s+/g, '') : v || '-'; };
-    const cruise = /CI/.test(up(g.cruise_profile)) || !str(g.cruise_profile) ? (ci ? `CI${ci}` : '-') : up(g.cruise_profile);
+    // Mission+ shows CLB / CIxx / CIxx (Flight Information) and CLB / VCI/CI0xx/TASnnn / DES/CI0xx (FMS Init)
+    const ciMode = /CI/.test(up(g.cruise_profile)) || !str(g.cruise_profile);
+    const cruise = ciMode ? (ci ? `CI${ci}` : '-') : up(g.cruise_profile);
+    const tas = Math.round(num(g.cruise_tas));
+    const sp = {
+      climb: 'CLB', cruise, descent: ci ? `CI${ci}` : '-',
+      fmsCruise: ciMode && ci ? `VCI/CI${Z(num(ci), 3)}${tas ? `/TAS${Z(tas, 3)}` : ''}` : cruise,
+      fmsDescent: ci ? `DES/CI${Z(num(ci), 3)}` : '-',
+    };
     // TOC data
     const toc = o.navlog.find((x) => up(x.ident) === 'TOC');
     const tocWind = toc && str(toc.wind_dir) !== '' ? `${Z(Math.round(num(toc.wind_dir)), 3)}/${Z(Math.round(num(toc.wind_spd)), 3)}` : '-';
@@ -223,7 +231,7 @@
       }
     });
     const stepHtml = steps.map(([fx, fl]) => `${esc(fx)}/<span class="b">FL${Z(fl, 3)}</span>`).join('  ');
-    return { pf, spd, cruise, toc, tocWind, tocOat, route, steps, stepHtml };
+    return { pf, spd, cruise, sp, toc, tocWind, tocOat, route, steps, stepHtml };
   }
 
   // Flt Prep > Flight Information (per Cole's DAL0183 LIRF-KJFK photos)
@@ -237,7 +245,7 @@
     const port = (p) => (p ? [p.icao, p.iata || p.code, p.name].filter(Boolean).join(' / ') : '-');
     const lt2 = (d, tz) => lt(d, tz) || '-';
     const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
-    const { pf, spd, cruise, tocWind, tocOat, route, stepHtml } = fiBits(m);
+    const { pf, sp, tocWind, tocOat, route, stepHtml } = fiBits(m);
     // ATC flight plan remarks: equipment line + item 18 + field elevations
     const fpl = str(ofp.atc?.flightplan_text).replace(/[()]/g, '');
     const segs = fpl.split(/\s*\n?-\s*(?=[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
@@ -286,7 +294,7 @@
       <div class="mp-fip">
         <div class="mp-firt">
           <div class="mp-fik">Speed:</div><div class="l">Climb</div><div class="l">Cruise</div><div class="l">Descent</div>
-          <div></div><b>${esc(spd(g.climb_profile))}</b><b>${esc(cruise)}</b><b>${esc(spd(g.descent_profile))}</b>
+          <div></div><b>${esc(sp.climb)}</b><b>${esc(sp.cruise)}</b><b>${esc(sp.descent)}</b>
           <div class="mp-fik">Route:</div><div class="l">TOC Wind</div><div class="l">TOC Temp (°C)</div><div class="l">Ground Distance (NM)</div>
           <div></div><b class="s">${esc(tocWind)}</b><b class="s">${esc(tocOat)}</b><b class="s">${num(g.route_distance) ? Math.round(num(g.route_distance)) : '-'}</b>
           <div></div><div></div><div class="l">Company Route</div><div></div>
@@ -310,10 +318,10 @@
     const { o } = m;
     const ofp = o.raw, g = o.general, f = o.fuel, w = o.wts, t = o.times;
     const O = o.origin || {}, D = o.dest || {}, A = o.alts[0];
-    const { pf, spd, cruise, toc, tocWind, route, stepHtml } = fiBits(m);
+    const { pf, sp, toc, tocWind, route, stepHtml } = fiBits(m);
     const k = (v) => (str(v) === '' ? '' : (o.W(v) / 1000).toFixed(1));
     const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
-    const box = (v, cls = '') => `<span class="mp-fb ${cls}">${esc(v ?? '')}</span>`;
+    const box = (v, cls = '', html = false) => `<span class="mp-fb ${cls}">${v == null ? '' : html ? v : esc(String(v))}</span>`;
     const tmp = (c) => (str(c) === '' ? '' : `${num(c) < 0 ? 'M' : 'P'}${Z(Math.abs(Math.round(num(c))), 2)}`);
     const fl0 = num(g.initial_altitude);
     const trop = num(toc?.tropopause_feet) || num(g.avg_tropopause);
@@ -351,7 +359,40 @@
           <div class="r3 v"><span>&nbsp;&nbsp;${esc((m.fuel.minLdg / 1000).toFixed(1))}</span><span class="c">${esc((m.fuel.delay / 1000).toFixed(1))} /</span><span></span></div>
         </div></div>
         <div class="mp-fmsfoot">${esc(o.icaoType)} FMGC</div>
-      </div>` : '';
+      </div>` : (() => {
+        // Boeing-style CDU (Cole's DAL B739 screenshots): RTE + PERF INIT. Used for every non-Airbus type.
+        const oat = toc && str(toc.oat) !== '' ? num(toc.oat) : null;
+        const oatF = oat == null ? '' : tmp(oat * 9 / 5 + 32);
+        const zfw = num(k(w.est_zfw)), ramp = num(k(f.plan_ramp));
+        const fam = /^B7(\d)/.exec(o.icaoType);
+        return `
+      <div class="mp-fms">
+        <div class="mp-fmsc"><div class="mp-fmst">RTE</div><div class="mp-fmsp mp-cdu">
+          <div class="r2"><span>ORIGIN</span><span class="rt">DEST</span></div>
+          <div class="r2"><span>${box(O.icao, 'w5 ct')}</span><span class="rt">${box(D.icao, 'w5 ct')}</span></div>
+          <div class="r2"><span>CO ROUTE</span><span class="rt">FLT NO.</span></div>
+          <div class="r2"><span>${box('', 'w5')}</span><span class="rt">${box(o.callsign, 'w5 ct')}</span></div>
+          <div class="r2"><span>RUNWAY</span><span class="rt">FLT PLAN</span></div>
+          <div class="r2"><span>${box('', 'w5')}</span><span class="rt lk">REQUEST&gt;&nbsp;&nbsp;</span></div>
+          <div class="mp-cdudash"></div>
+          <div class="r2"><span class="lk">&lt;ALTN DEST</span></div>
+          <div class="r2 sp"><span class="lk">&lt;RTE 2</span><span class="rt lk">ACTIVATE&gt;</span></div>
+        </div></div>
+        <div class="mp-fmsc"><div class="mp-fmst">PERF INIT</div><div class="mp-fmsp mp-cdu">
+          <div class="r2"><span>GW&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ CRZ CG</span><span class="rt">TRIP&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/&nbsp;&nbsp;&nbsp;&nbsp;CRZ ALT</span></div>
+          <div class="r2"><span class="v">&nbsp;&nbsp;${zfw && ramp ? esc((zfw + ramp).toFixed(1)) : ''}&nbsp;&nbsp;&nbsp;/</span><span class="rt">${box(fl0 ? `FL${Z(Math.round(fl0 / 100), 3)}` : '', 'w3 ct')}</span></div>
+          <div class="r2"><span>PLAN&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;FUEL</span><span class="rt">CRZ WIND</span></div>
+          <div class="r2"><span>${box(k(f.plan_ramp), 'w3 ct')} /</span><span class="rt">${box(avgW === '-' ? '' : avgW, 'w5 ct')}</span></div>
+          <div class="r2"><span>ZFW</span><span class="rt">T/C OAT</span></div>
+          <div class="r2"><span>${box(k(w.est_zfw), 'w3 ct')}</span><span class="rt">${box(oatF ? `${oatF}<small>°F</small>` : '', 'w3 ct', true)} ${box(oat == null ? '' : `${tmp(oat)}<small>°C</small>`, 'w3 ct', true)}</span></div>
+          <div class="r2"><span>RESERVES</span><span class="rt">TRANS ALT</span></div>
+          <div class="r2"><span>${box((m.fuel.minLdg / 1000).toFixed(1), 'w3 ct')}</span><span></span></div>
+          <div class="r2"><span>COST INDEX</span><span class="rt">PERF INIT</span></div>
+          <div class="r2"><span>${box(str(g.costindex), 'w3 ct')}</span><span class="rt lk">REQUEST&gt;</span></div>
+        </div></div>
+        <div class="mp-fmsfoot">${esc(fam ? `B7${fam[1]}7` : o.icaoType)}</div>
+      </div>`;
+      })();
     const skip = new Set(['TOC', 'TOD']);
     const fixes = [O.icao, ...o.navlog.filter((x) => {
       const id = up(x.ident), ty = String(x.type || '').toLowerCase();
@@ -371,7 +412,7 @@
       <hr class="mp-fmshr">
       <div class="mp-fmsb mp-fms2">
         <div class="kv3"><b>Performance Factor:</b><span>${esc(pf)}</span><b>Ground Distance:</b><span>${num(g.route_distance) ? Math.round(num(g.route_distance)) : '-'}</span><b>ISA Deviation:</b><span>${esc(dev)}</span></div>
-        <div><b>Speeds:</b><div class="kv3 in"><span>Climb:</span><span>${esc(spd(g.climb_profile))}</span><span>Cruise:</span><span>${esc(cruise)}</span><span>Descent:</span><span>${esc(spd(g.descent_profile))}</span></div></div>
+        <div><b>Speeds:</b><div class="kv3 in"><span>Climb:</span><span>${esc(sp.climb)}</span><span>Cruise:</span><span>${esc(sp.fmsCruise)}</span><span>Descent:</span><span>${esc(sp.fmsDescent)}</span></div></div>
       </div>
       <hr class="mp-fmshr">`;
   }
