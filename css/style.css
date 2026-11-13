@@ -178,7 +178,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-times > div + div { border-left: 1px solid rgba(255,255,255,.35); padding-left: .6em; } .mp-times b { font-size: 1.15em; font-weight: 600; color: #fff; }
 .mp-alts { display: flex; text-align: center; background: #1d4bbb; font-size: 1.05em; }
 .mp-alts > div { flex: 1; padding: .8em; }
-.mp-alts.split > div:first-child { flex: 0 0 30%; border-right: 1px solid rgba(217,225,242,.35); margin: .5em 0; padding: .3em; }
+.mp-alts.mp-alts-etops > div:first-child { flex: 0 0 30%; border-right: 1px solid rgba(217,225,242,.35); margin: .5em 0; padding: .3em; }
 .mp-fuel { display: grid; grid-template-columns: repeat(4, 1fr); gap: .3em 1em; margin: 0 1em; padding: .7em 1em; background: var(--mp-panel); border-radius: 3px; }
 .mp-fl { color: var(--mp-dim); font-size: 1em; }
 .mp-fv { font: 600 1.15em/1.4 var(--mp-mono); } .mp-fv.g { color: var(--mp-teal); }

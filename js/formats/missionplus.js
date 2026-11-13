@@ -344,7 +344,7 @@ ${body}
       <div>TLW <b>${esc(zt(tlwFrom))} -${esc(zt(m.eOn))}</b></div>
       <div>LDG <b>${esc(zt(m.eOn))}</b></div>
     </div>
-    <div class="mp-alts${m.etops ? ' split' : ''}">${m.etops ? '<div data-mp-doc="inflight:etops" role="button" tabindex="0">ETOPS</div>' : ''}<div data-mp-doc="inflight:altsum" role="button" tabindex="0">ALL ALTERNATES (${o.alts.length})</div></div>
+    <div class="mp-alts${m.etops ? ' mp-alts-etops' : ''}">${m.etops ? '<div data-mp-doc="inflight:etops" role="button" tabindex="0">ETOPS</div>' : ''}<div data-mp-doc="inflight:altsum" role="button" tabindex="0">ALL ALTERNATES (${o.alts.length})</div></div>
   </div>
 
   <div class="mp-fuel">
