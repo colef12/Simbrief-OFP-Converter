@@ -355,7 +355,7 @@
     const skip = new Set(['TOC', 'TOD']);
     const fixes = [O.icao, ...o.navlog.filter((x) => {
       const id = up(x.ident), ty = String(x.type || '').toLowerCase();
-      return id && !skip.has(id) && !/^(ETP|EEP|EXP|ETOPS)/.test(id) && !['toc', 'tod', 'etp', 'apt'].includes(ty);
+      return id && !skip.has(id) && !/^(ETP|EEP|EXP|ETOPS|DER\d|RW\d)/.test(id) && !['toc', 'tod', 'etp', 'apt'].includes(ty);
     }).map((x) => up(x.ident)), D.icao].filter(Boolean)
       .filter((x, i, a) => i === 0 || x !== a[i - 1]);
     const dev = str(g.avg_temp_dev) === '' ? '-' : tmp(g.avg_temp_dev);
