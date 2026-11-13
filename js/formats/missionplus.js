@@ -315,10 +315,10 @@
   }
 
   // "Landing*" on Flight Additional Information follows the departure (T/Off) time on the Nav Log
-  function liveLanding(screen, body) {
+  function liveLanding(root, body) {
     const el = body.querySelector('.mp-faldg');
     if (!el || !el.dataset.on || !el.dataset.off) return;
-    const v = screen.querySelector('.mp-nlrow input[data-k$=":ata"]')?.value || '';
+    const v = root.querySelector('.mp-nlrow input[data-k$=":ata"]')?.value || '';
     const mt = /^([01]\d|2[0-3]):?([0-5]\d)$/.exec(v.trim());
     if (!mt) return;
     const off = Number(el.dataset.off);
@@ -730,7 +730,7 @@ ${body}
         dv.querySelector('.mp-dvt').textContent = tpl?.dataset.title || (label ? label.childNodes[0].textContent.trim() : '');
         const body = dv.querySelector('.mp-dvb');
         body.replaceChildren();
-        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(screen, body); }
+        if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); }
         else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
         dv.hidden = false;
         dv.scrollTop = 0;
