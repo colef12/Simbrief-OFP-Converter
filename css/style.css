@@ -253,6 +253,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-dvtools { display: flex; flex-direction: column; gap: .7em; }
 .mp-tool { display: grid; place-items: center; width: 4.2em; height: 4.2em; background: #4a5b8c; border-radius: 3px; color: #dbe4f7; cursor: pointer; }
 .mp-tool .mp-ico { width: 2.1em; height: 2.1em; }
+.mp-dvnav .mp-tool.off { opacity: .35; cursor: default; }
 .mp-dvnav { position: absolute; right: 2.4em; bottom: 1.6em; display: flex; flex-direction: column; gap: .5em; }
 .mp-screen.doc-open .mp-tab.on:not(.docon) { background: transparent; }
 .mp-tab.docon { background: var(--mp-blue); color: #fff; }

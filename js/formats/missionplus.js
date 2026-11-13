@@ -1513,11 +1513,11 @@
   function drawers(m) {
     const menus = drawerMenus(m);
     return Object.entries(menus).map(([key, secs]) => `
-    <aside class="mp-drawer" data-mp-drawer="${key}" aria-hidden="true">${secs.map(([title, items]) => `
+    <aside class="mp-drawer" data-mp-drawer="${key}" aria-hidden="true">${secs.map(([title, items], si) => `
       ${title ? `<h5 class="mp-drh">${esc(title)}</h5>` : '<div class="mp-drgap"></div>'}
       ${items.map(([id, label, kind, unread, sub]) => (kind === 'note' ? `<p class="mp-drnote">${esc(label)}</p>` : kind === 'act' ? `
       <button type="button" class="mp-dri mp-dract" data-mp-action="${id.slice(1)}">${ico('post', 'mp-dric')}<span>${esc(label)}</span></button>` : `
-      <button type="button" class="mp-dri${unread ? ' unread' : ''}" data-mp-doc="${key}:${id}" data-default-unread="${unread ? 1 : 0}">
+      <button type="button" class="mp-dri${unread ? ' unread' : ''}" data-mp-doc="${key}:${id}" data-sec="${key}:${si}" data-default-unread="${unread ? 1 : 0}">
         ${ico(kind === 'img' ? 'dimg' : kind === 'txt' ? 'dtxt' : 'dxml', 'mp-dric')}<span>${esc(label)}${sub ? `<br>${esc(sub)}` : ''}</span>
       </button>`)).join('')}`).join('')}
     </aside>`).join('');
@@ -1528,7 +1528,7 @@
     const { o, alt } = m;
     const O = o.origin || {}, D = o.dest || {};
     return `
-<div class="mp-device"><div class="mp-screen" data-flight="${esc(o.requestId || `${o.callsign}-${O.icao}-${D.icao}`)}">
+<div class="mp-device"><div class="mp-screen" data-flight="${esc(o.requestId || `${o.callsign}-${O.icao}-${D.icao}`)}" data-pagenav="${esc(o.settings?.mpPageNav || 'folder')}">
   <div class="mp-status">
     <div class="mp-st-l"><b>${esc(o.callsign)} ${esc(m.dateTag)}</b> <span class="${m.current ? 'mp-cur' : 'mp-nc'}">${m.current ? 'Current' : 'Not current'}</span> ${esc(o.reg)} ${esc(o.icaoType)}</div>
     <div class="mp-st-r">${esc(zt(m.now))} ${esc(`${m.now.getUTCDate()} ${MON[m.now.getUTCMonth()]} ${m.now.getUTCFullYear()}`)} ${ico('db')} 100 % ${ico('batt')}</div>
@@ -1847,6 +1847,23 @@ ${body}
     screen.classList.remove('dr-open');
     const scrim = screen.querySelector('.mp-scrim'); if (scrim) scrim.hidden = true;
   }
+  function docSequence(screen) {
+    const cur = screen.querySelector('.mp-docview')?.dataset.doc || '';
+    const all = [...screen.querySelectorAll('.mp-dri[data-mp-doc]')];
+    const me = all.find((b) => b.dataset.mpDoc === cur);
+    if (!me) return { list: [], i: -1 };
+    const mode = screen.dataset.pagenav;
+    const list = mode === 'all' ? all : mode === 'category' ? all.filter((b) => b.dataset.sec === me.dataset.sec) : all.filter((b) => b.dataset.mpDoc.split(':')[0] === cur.split(':')[0]);
+    return { list, i: list.indexOf(me) };
+  }
+  function docNeighbour(screen, dir) {
+    const { list, i } = docSequence(screen);
+    return i < 0 ? null : list[i + dir] || null;
+  }
+  function refreshDocNav(screen) {
+    const { list, i } = docSequence(screen);
+    screen.querySelectorAll('[data-mp-dvscroll]').forEach((b) => b.classList.toggle('off', i < 0 || !list[i + Number(b.dataset.mpDvscroll)]));
+  }
   function wireDrawers(root) {
     if (root.dataset.mpDrawers) return;
     root.dataset.mpDrawers = '1';
@@ -1882,16 +1899,20 @@ ${body}
         dv.dataset.kind = tpl?.dataset.kind || '';
         if (tpl) { body.appendChild(tpl.content.cloneNode(true)); liveLanding(root, body); wireNotams(screen, dv, body); liveDocs(root, screen, body); }
         else body.innerHTML = '<p class="mp-dvempty">This document isn\'t built in the converter yet.</p>';
+        dv.dataset.doc = id;
         dv.hidden = false;
         dv.scrollTop = 0;
+        refreshDocNav(screen);
         screen.classList.add('doc-open');
         screen.querySelectorAll('[data-mp-tab]').forEach((t) => t.classList.toggle('docon', t.dataset.mpTab === id.split(':')[0]));
         return true;
       }
       const actn = e.target.closest('[data-mp-action]');
       if (actn) { closeDrawers(screen); postFlight(root, screen, actn.dataset.mpAction); return true; }
+      // Up / down arrows page to the previous / next document (guide 3.1.1.2 Page Navigation:
+      // Current Category, Current Folder or All Folders, set in Settings)
       const dvs = e.target.closest('[data-mp-dvscroll]');
-      if (dvs) { const dv = screen.querySelector('.mp-docview'); dv.scrollBy({ top: Number(dvs.dataset.mpDvscroll) * dv.clientHeight * 0.8, behavior: 'smooth' }); return true; }
+      if (dvs) { const nb = docNeighbour(screen, Number(dvs.dataset.mpDvscroll)); if (nb) nb.click(); return true; }
       if (e.target.closest('.mp-scrim') || e.target.closest('[data-mp-page]')) {
         closeDrawers(screen);
         if (e.target.closest('[data-mp-page]')) {
