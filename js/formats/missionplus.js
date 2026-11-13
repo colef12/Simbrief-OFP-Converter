@@ -825,22 +825,39 @@ ${body}
       return best && best.xtk <= 30 ? best.s : null;
     };
 
-    const state = { next: 1, prev: null, lastStamp: '', wasGround: false, started: false };
+    // Departure time: in the real airplane it comes from ACARS OOOI and is keyed in by hand, so
+    // the tracker writes it like a typed entry (blue, no green GPS mark). Takeoff = the moment
+    // ground speed first exceeds 100 kt (interpolated between samples).
+    const TO_GS = 100;
+    const fillOff = (when) => {
+      const f = fixes[0];
+      if (!f || f.input.value) return;
+      when = new Date(Math.round(when.getTime() / 60000) * 60000);
+      f.input.value = `${Z(when.getUTCHours(), 2)}:${Z(when.getUTCMinutes(), 2)}`;
+      delete f.input.dataset.src;
+      f.input.dispatchEvent(new Event('input', { bubbles: true })); // saves it; reads as manual
+      gpsStore.set(flight, 0, false);
+      recompute();
+    };
+    const state = { next: 1, prev: null, lastStamp: '', started: false, offDone: false };
     const onSample = (p) => {
       const airborne = typeof p.onGround === 'boolean' ? !p.onGround && (p.gs >= 40 || p.alt > elev + 100) : p.gs >= 80 || p.alt > elev + 500;
       if (!state.started) {
         state.started = true;
-        state.wasGround = !airborne;
         if (airborne) { // joined mid-flight: skip fixes already behind, don't backfill
+          state.offDone = true;
           const s0 = routePos(p, 1);
           if (s0 != null) while (state.next < fixes.length && !(cum[state.next] > s0)) state.next++;
           state.prev = { ...p, s: s0 };
           return;
         }
-      } else if (state.wasGround && airborne) { // actual OFF -> airport row ATA
-        const t0 = state.prev ? state.prev.t : p.t;
-        fill(0, new Date((t0.getTime() + p.t.getTime()) / 2));
-        state.wasGround = false;
+      }
+      if (!state.offDone && p.gs > TO_GS) {
+        const q = state.prev;
+        let when = p.t;
+        if (q && q.gs <= TO_GS && p.gs > q.gs) when = new Date(q.t.getTime() + ((TO_GS - q.gs) / (p.gs - q.gs)) * (p.t.getTime() - q.t.getTime()));
+        fillOff(when);
+        state.offDone = true;
       }
       const s1 = airborne ? routePos(p, state.next) : null;
       if (s1 != null) {
@@ -922,7 +939,7 @@ ${body}
       if (on) setOn(true); else st.textContent = '';
     });
     btn.addEventListener('click', () => setOn(btn.getAttribute('aria-pressed') !== 'true'));
-    csIn.addEventListener('change', () => { if (btn.classList.contains('on')) { Object.assign(state, { next: 1, prev: null, lastStamp: '', started: false }); poll(); } });
+    csIn.addEventListener('change', () => { if (btn.classList.contains('on')) { Object.assign(state, { next: 1, prev: null, lastStamp: '', started: false, offDone: false }); poll(); } });
     let wasOn = false;
     try { wasOn = localStorage.getItem('mp.gpsOn') === '1'; } catch { /* ignore */ }
     if (wasOn) setOn(true);
