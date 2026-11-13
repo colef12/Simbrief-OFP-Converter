@@ -327,6 +327,25 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nbm { flex: none; cursor: pointer; color: #e8ecf5; margin-right: .1em; } .mp-nbm .mp-ico { width: 1.8em; height: 1.8em; }
 .mp-nbm.on .mp-ico { fill: #e8ecf5; }
 .mp-nnone { color: var(--mp-dim); padding: 1em 1.6em; }
+.mp-nc[hidden], .mp-nsub[hidden], .mp-nrwy[hidden], .mp-t-all[hidden] { display: none !important; }
+.mp-ndays.new { color: #f6d55c; }
+.mp-nct mark { background: #f6d55c; color: #111; padding: 0 .1em; } .mp-nct mark.w { background: #fff; }
+.mp-nchip i { font: 400 .5em var(--mp-sans); font-style: normal; color: #4e9bff; border: 1.5px solid #4e9bff; border-radius: 999px; padding: .15em .8em; margin-left: .6em; vertical-align: middle; }
+.mp-nwrap { display: flex; gap: 1em; align-items: flex-start; }
+.mp-notams { flex: 1; min-width: 0; }
+.mp-nfilter { position: sticky; top: 0; flex: 0 0 34%; display: flex; flex-direction: column; gap: .9em; padding: .2em 0 1em; color: #dbe4f7; font-size: .95em; }
+.mp-nfilter[hidden] { display: none; }
+.mp-nfilter label { display: flex; flex-direction: column; gap: .35em; }
+.mp-nfilter select, .mp-nfilter input:not([type=checkbox]) { font: inherit; color: #fff; background: #111a30; border: 1.5px solid #8a95b3; border-radius: 2px; padding: .45em .5em; }
+.mp-nfilter select:disabled { opacity: .5; }
+.mp-nnew { flex-direction: row !important; align-items: center; gap: .8em !important; cursor: pointer; }
+.mp-nnew input { position: absolute; opacity: 0; pointer-events: none; }
+.mp-sw { width: 2.4em; height: 1.3em; border-radius: 1em; background: #4a5574; position: relative; transition: background .2s; }
+.mp-sw::after { content: ''; position: absolute; top: .15em; left: .15em; width: 1em; height: 1em; border-radius: 50%; background: #fff; transition: left .2s; }
+.mp-nnew input:checked + .mp-sw { background: #2f8ff0; } .mp-nnew input:checked + .mp-sw::after { left: 1.25em; }
+.mp-nclear { align-self: flex-end; font: 600 .9em var(--mp-sans); color: #fff; background: #4a5b8c; border: 0; border-radius: 3px; padding: .7em 1.2em; cursor: pointer; margin-top: .4em; }
+.mp-t-filter.on { color: #4e9bff; }
+.mp-t-filter { cursor: pointer; }
 
 /* FMS Initialization */
 .mp-fms { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.1em; font-family: Arial, Helvetica, sans-serif; color: #fff; margin-bottom: 1.1em; }
