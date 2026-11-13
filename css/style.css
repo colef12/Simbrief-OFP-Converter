@@ -315,7 +315,7 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-npri[data-p="low"] { background: #fff; border-color: #fff; }
 .mp-npri[data-p="medium"] { background: #f6c945; border-color: #f6c945; }
 .mp-npri[data-p="high"] { background: #f39a2b; border-color: #f39a2b; }
-.mp-nkb { cursor: pointer; color: #e8ecf5; } .mp-nkb .mp-ico { width: 1.7em; height: 1.7em; transform: rotate(90deg); }
+.mp-nkb { cursor: pointer; color: #e8ecf5; } .mp-nkb .mp-ico { width: 1.7em; height: 1.7em; }
 .mp-nmenu { position: absolute; right: 0; top: 2.4em; z-index: 6; background: #1b1e25; box-shadow: 0 6px 16px rgba(0,0,0,.5); font-size: 1.15em; color: #e8ecf5; min-width: 9em; padding: .2em 0; }
 .mp-nmenu[hidden] { display: none; }
 .mp-nmenu > div { display: flex; align-items: center; gap: .7em; padding: .55em .9em; cursor: pointer; }
