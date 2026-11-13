@@ -276,7 +276,8 @@
     <span class="mp-hbtn">${ico('menu')}</span>
     <div class="mp-hp"><div>${esc(O.icao)}</div><small>ETD ${esc(zt(m.eOut))}</small></div>
     <span class="mp-hbtn mp-sq">${ico('route')}</span>
-    <div class="mp-hp mp-sq r"><div>${esc(D.icao)}</div><small class="mp-hreta" data-in="${m.eIn ? m.eIn.getTime() : ''}">RETA ${esc(zt(m.eIn))}</small></div>
+    <div class="mp-hp mp-sq r mp-hdest" role="button" tabindex="0" data-in="${m.eIn ? m.eIn.getTime() : ''}" data-sta="${m.sIn ? m.sIn.getTime() : ''}" data-tz="${m.tzD ?? ''}"><div>${esc(D.icao)}</div><small class="mp-hreta">ETA ${esc(zt(m.eIn))}</small>
+      <div class="mp-etapop" hidden><small class="mp-ep-l">ETA</small><b class="mp-ep-eta"></b><small>STA</small><b class="mp-ep-sta"></b><em class="mp-dv"></em></div></div>
     <span class="mp-grow"></span>
     <span class="mp-hbtn mp-badge-wrap">${ico('bell')}<i class="mp-badge">99+</i></span>
     <span class="mp-hbtn">${ico('mark')}</span>
@@ -479,7 +480,7 @@ ${body}
       <div class="mp-fix" data-fix="${i}" tabindex="0" role="button" aria-expanded="false">
         <div class="mp-fixh"><b>${esc(fixName(r.id))}</b>${tags}<span class="mp-grow"></span>${ico('more', 'mp-kb')}</div>
         <div class="mp-nlrow" data-tcum="${r.tcum}" data-eta="${r.eta ? r.eta.getTime() : ''}" data-prmg="${(r.fob / 1000).toFixed(1)}" data-lat="${r.lat || ''}" data-lon="${r.lon || ''}">
-          <span class="mp-reta">${esc(hh(r.eta))}</span><span>${esc(hh(r.eta))}</span><span class="mp-ent">${box(`${i}:ata`, 'hhmm', 'w4')}<em class="mp-dv" hidden></em></span>
+          <span class="mp-reta">${esc(hh(r.eta))}</span><span class="mp-eta">${esc(hh(r.eta))}</span><span class="mp-ent">${box(`${i}:ata`, 'hhmm', 'w4')}<em class="mp-dv" hidden></em></span>
           <span>${esc(hm(r.tcum))}</span><span>${(r.fob / 1000).toFixed(1)}</span><span class="mp-ent">${box(`${i}:armg`, 'NNN.N', 'w5')}<em class="mp-dv" hidden></em></span>
           <span>${esc(r.fl)}</span><span class="mp-ent">${box(`${i}:afl`, 'NNN', 'w3')}</span>
         </div>
@@ -516,9 +517,12 @@ ${body}
   //   Pill under it = ATA − ETA (green when early/on time, amber when late).
   // - ARMG: always manual (blue). Pill = ARMG − PRMG in klb (green at/above plan, amber below).
   // - AFL: manual (blue), no pill.
-  // - RETA at a fix = latest ATA at an EARLIER fix (airport row ATA = actual OFF) + planned
-  //   time from that fix; a fix's own ATA does not change its own RETA. Revised RETA = green.
-  // - Header destination RETA shifts block-in by the destination row's RETA − ETA.
+  // - Departure (airport row) ATA = actual OFF: the whole ETA column re-bases to OFF + TCUM,
+  //   so the departure pill reads 00:00 and later pills compare against the re-based ETA.
+  // - RETA at a fix = latest ATA at an EARLIER fix + planned time from that fix; a fix's own
+  //   ATA does not change its own RETA. Any RETA derived from an ATA = green.
+  // - Header destination: "ETA hh:mmZ" until an ATA exists, then "RETA hh:mmZ" on a blue box.
+  //   Tapping it shows (R)ETA and STA in Z/(L) with a pill (R)ETA − STA.
   // ---- tab drawers + unread state ----
   const READ_KEY = 'mp.read';
   const readStore = {
@@ -650,22 +654,31 @@ ${body}
       input.classList.toggle('set', state === 'man' || state === 'gps');
       input.classList.toggle('gps', state === 'gps');
     };
-    const headers = [...root.querySelectorAll('.mp-hreta')];
+    const dests = [...root.querySelectorAll('.mp-hdest')];
     const recompute = () => {
       let base = null; // latest ATA at an earlier fix: { time, tcum }
       let destShift = 0;
+      // Departure ATA (actual OFF) re-bases every ETA
+      const r0 = rows[0];
+      const offIn = r0?.querySelector('input[data-k$=":ata"]');
+      const offPlanned = Number(r0?.dataset.eta) || null;
+      const off = offIn?.value ? parse(offIn.value, offPlanned) : null;
+      const offShift = off && offPlanned ? off.getTime() - offPlanned : 0;
       rows.forEach((row, idx) => {
-        const planned = Number(row.dataset.eta) || null;
+        const planned0 = Number(row.dataset.eta) || null;
+        const planned = planned0 ? planned0 + offShift : null;
         const tcum = Number(row.dataset.tcum) || 0;
+        const etaCell = row.querySelector('.mp-eta');
+        if (etaCell) etaCell.textContent = planned ? hhmmOf(new Date(planned)) : '--:--';
         // RETA from earlier ATAs only
         const cell = row.querySelector('.mp-reta');
         const reta = base ? new Date(base.time + (tcum - base.tcum) * 1000) : (planned ? new Date(planned) : null);
         cell.textContent = reta ? hhmmOf(reta) : '--:--';
-        cell.classList.toggle('rev', !!base && !!reta && reta.getTime() !== planned);
-        if (idx === rows.length - 1 && reta && planned) destShift = reta.getTime() - planned;
+        cell.classList.toggle('rev', !!base && !!reta);
+        if (idx === rows.length - 1 && reta && planned0) destShift = reta.getTime() - planned0;
         // ATA
         const ataIn = row.querySelector('input[data-k$=":ata"]');
-        const ata = ataIn.value ? parse(ataIn.value, planned) : null;
+        const ata = ataIn.value ? parse(ataIn.value, planned0) : null;
         mark(ataIn, !ataIn.value ? '' : ata === undefined ? 'bad' : ataIn.dataset.src === 'gps' ? 'gps' : 'man');
         const ataPill = ataIn.parentElement.querySelector('.mp-dv');
         if (ata && planned) {
@@ -686,11 +699,30 @@ ${body}
         const flIn = row.querySelector('input[data-k$=":afl"]');
         mark(flIn, !flIn.value ? '' : /^\d{2,3}$/.test(flIn.value.trim()) ? 'man' : 'bad');
       });
-      headers.forEach((h) => {
+      const revised = !!base;
+      dests.forEach((h) => {
         if (!h.dataset.in) return;
-        h.textContent = `RETA ${hhmmOf(new Date(Number(h.dataset.in) + destShift))}Z`;
+        const t = new Date(Number(h.dataset.in) + destShift);
+        const lbl = revised ? 'RETA' : 'ETA';
+        const loc = (d) => { const tz = h.dataset.tz; if (tz === '') return ''; const x = new Date(d.getTime() + Number(tz) * 3600e3); return `/${hhmmOf(x)}(L)`; };
+        h.classList.toggle('rev', revised);
+        h.querySelector('.mp-hreta').textContent = `${lbl} ${hhmmOf(t)}Z`;
+        h.querySelector('.mp-ep-l').textContent = lbl;
+        h.querySelector('.mp-ep-eta').textContent = `${hhmmOf(t)}Z${loc(t)}`;
+        const sta = Number(h.dataset.sta) || null;
+        h.querySelector('.mp-ep-sta').textContent = sta ? `${hhmmOf(new Date(sta))}Z${loc(new Date(sta))}` : '-';
+        const dm = sta ? Math.round((t.getTime() - sta) / 60000) : null;
+        pill(h.querySelector('.mp-etapop .mp-dv'), dm == null ? null : sgnHm(dm), dm > 0 ? 'late' : 'ok');
       });
     };
+    // Tap the destination box to show (R)ETA vs STA; tap anywhere else to close
+    dests.forEach((h) => {
+      const pop = h.querySelector('.mp-etapop');
+      const toggle = (e) => { e.stopPropagation(); pop.hidden = !pop.hidden; h.classList.toggle('open', !pop.hidden); };
+      h.addEventListener('click', toggle);
+      h.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); toggle(e); } });
+      root.addEventListener('click', () => { pop.hidden = true; h.classList.remove('open'); });
+    });
     // Typing is free-form; on leaving the box "1124" becomes "11:24" and "12" fuel becomes "12.0"
     list.addEventListener('input', (e) => { if (e.target.matches('input[data-k]')) { delete e.target.dataset.src; recompute(); } });
     list.addEventListener('change', (e) => {
