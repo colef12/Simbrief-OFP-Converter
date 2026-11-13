@@ -19,7 +19,7 @@ No login or password is needed. SimBrief's public API returns your most recently
 |---|---|---|
 | `psa` | PSA Airlines CRJ dispatch release (ACARS-printed OFP) | ✅ Available |
 | `rpa` | Republic Airways E-Jet flight brief (Navtech-style release) | ✅ Available |
-| `missionplus` | Mission+ iPad EFB — Dashboard, Nav Log | ✅ Available (more pages planned) |
+| `missionplus` | Mission+ iPad EFB — Dashboard, Nav Log and every tab's documents | ✅ Available |
 | … | More niche formats | Planned |
 
 ### PSA Airlines
@@ -101,7 +101,21 @@ Renders as an iPad screen instead of a printout. **Dashboard** page: flight ID (
 
 **Nav Log** page (tap the Nav Log tab in the device or the toolbar): origin row plus every SimBrief fix with ETA = planned OFF time + cumulative time (airport row = planned OFF), TCUM, planned fuel remaining (PRMG, klb), planned FL (cruise/TOC/TOD), and leg data between fixes (airway — blank hexagon for SID/STAR legs — distance, time, fuel to nearest 100 lb, Mach). FIR boundaries are marked when SimBrief supplies FIR ids. Up/down buttons page through the list.
 
-**Tab drawers**: Flt Prep, In Flight, NOTAM, Weather and Other Docs slide out a menu of documents over the current page, laid out like the real app (sections and buttons with XML / TXT / image icons). A bright left bar marks an unread document and each tab's badge is its unread count; opening a document marks it read (saved per flight). Built documents so far: **Alternates Summary** (In Flight; also opened by ALL ALTERNATES on the Dashboard) — each alternate's ICAO/IATA, distance and name, FL, time, ETA (planned landing + alternate ETE, green) and trip fuel. **ETOPS** (In Flight; also the ETOPS button beside ALL ALTERNATES on the Dashboard for ETOPS flights) — rule time, ETOPS positions detail for each equal-time point (position, EET/ETA, EFOB, both diversion airports with condition, FL, GSR/GSA, diversion time and ETA, fuel required) and the OFP's ETP/ETOPS text. Flights with NAT tracks get a Navigation › Oceanic Tracks entry; Ops Type shows Flag for international flights. Other documents open an empty page with their title for now — content is added page by page. Tap the tab again, tap outside, or press Esc to close.
+**Tab drawers**: every tab (Flt Prep, In Flight, NOTAM, Weather, Other Docs, Post Flight, Others) slides out its menu over the current page, laid out like the real app. A bright left bar marks an unread document and each tab's badge is its unread count; opening a document marks it read (saved per flight). Tap the tab again, tap outside, or press Esc to close. Pages built from photos of the real app are marked 📷; the rest follow the Mission+ v2.3.0 User Guide.
+
+| Tab | Documents |
+|---|---|
+| Flt Prep | FDRA (pilot name/staff no, ACCEPT, then Flight Information + Load & Fuel) · Flight Information 📷 · Flight Additional Information 📷 (landing time follows the Nav Log OFF time, green when revised) · Load & Fuel (Aircraft Loading + Mission Fueling) · Load & Fuel Remarks · Flight Plan Remarks · Company Remarks · Aircraft Discrepancy Report · Gate Message · FDP LATT and Block LATT (enter a revised ETE / ETD; revised columns in green) · FMS Initialization 📷 (Airbus INIT / INIT FUEL PREDICTION or Boeing RTE / PERF INIT) · Crew List · Crew Connections · Crew Rest Calculation (flights over 5 h: Rest Context and Settings, Three and Four Pilots Planning with timelines and editable pilot order) |
+| In Flight | Enroute Information (tropopause/FMS setting, terrain from MORA ≥ 10,000 ft, FIR entries, key info / activities) · Alternates Summary 📷 · ETOPS 📷 · Oceanic Tracks (NAT track message) |
+| NOTAM | Origin 📷, Alternate & Enroute (includes FIR NOTAMs), Destination and All NOTAMs, with filter (keyword, airport/runway, airspace, importance, bookmarks, viewed, new) and ALL |
+| Weather | Origin / Enroute (ETOPS suitable + enroute alternates) / Destination / Alternates METAR & TAF with validity check and adverse-weather colours · ATIS · Forecasted Winds & Temp (5 levels per fix, ΔISA and tropopause colours) · Field Conditions (from NOTAMs) · Threat Plots (SIGMETs) · graphical TP charts are not available from SimBrief |
+| Other Docs | Flight Plan Addendum · CBP (SimBrief's OFP text) · About Flight Plan · About Airport Weather |
+| Post Flight | Close Flight (clears this flight's entries) · Send PFR & Close (downloads a Post Flight Report text file first) |
+| Others | Obsolete and Trash (empty in the converter) |
+
+ETAs on Enroute Information, Alternates Summary and ETOPS start white and turn green once a Nav Log ATA revises them. LATT limits use 14 CFR 117 (Table B unaugmented, Table C augmented with class 1 rest, Table A flight time) with report = STD − 60 min; set the number of pilots and report time in Settings › Mission+, along with dispatcher name, Tel/Desk and MEL items.
+
+Ops Type shows Flag for international flights.
 
 **Fix details**: tap any fix to slide open its detail panel (blue) — TRMG (time remaining), MSA, IAS, GS, wind, tropopause, latitude/longitude, true/magnetic track, airspace (FIR), name, frequency, remarks, and a Clearance or Notes box saved per flight. Tapping another fix closes the open one; tapping it again closes it. Remarks come from SimBrief's OFP text (e.g. DAL layout `** DAL POSN RPT **`, `** CLIMB TO FL370 **`, FIR and ETOPS lines); fixes that are position reporting points get an **RPT** tag next to the name.
 
