@@ -290,6 +290,27 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-fatlw { display: grid; grid-template-columns: auto auto auto auto auto auto; justify-content: start; gap: 0 1.6em; padding-left: 3em; align-items: start; }
 .mp-fatlw span { color: #e6ebf7; } .mp-fatlw b { display: block; font-weight: 600; line-height: 1.25; }
 .mp-fanote { margin-top: .7em; font-size: .92em; color: #e6ebf7; }
+/* FMS Initialization */
+.mp-fms { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1.1em; font-family: Arial, Helvetica, sans-serif; color: #fff; margin-bottom: 1.1em; }
+.mp-fmst { text-align: center; font-size: 1.05em; margin-bottom: .2em; }
+.mp-fmsp { border: 3px solid #c9ccd4; padding: .3em .5em .6em; font-size: .9em; }
+.mp-fmsp > div { display: flex; justify-content: space-between; align-items: center; min-height: 1.5em; color: #c9ccd4; }
+.mp-fmsp > div.r3 { display: grid; grid-template-columns: 1.3fr 1fr 1fr; }
+.mp-fmsp > div.sp { margin-top: .9em; }
+.mp-fmsp .rt { text-align: right; } .mp-fmsp .c { text-align: center; }
+.mp-fmsp .v, .mp-fmsp .lk { color: #fff; font-size: 1.15em; }
+.mp-fmsp .lk { font-size: 1.1em; }
+.mp-fb { display: inline-block; min-width: 3.4em; min-height: 1.45em; border: 1.5px solid #e8eaf0; padding: .1em .3em; color: #4fd2e6; font-size: 1.15em; vertical-align: middle; text-align: left; }
+.mp-fb.w3 { min-width: 3.9em; } .mp-fb.w5 { min-width: 6.2em; } .mp-fb.w6 { min-width: 8.6em; } .mp-fb.ra { text-align: right; }
+.mp-fmsfoot { grid-column: 2; text-align: right; font-size: .45em; color: #c9ccd4; margin-top: .2em; }
+.mp-fmsb { background: #22252c; border-radius: 2px; padding: .25em .4em .35em; margin-bottom: .45em; font-family: Arial, Helvetica, sans-serif; color: #fff; line-height: 1.3; }
+.mp-fmsb > b, .mp-fms2 b { color: #c9ccd4; display: block; }
+.mp-fmsb .g { color: #69c65f; } .mp-fmsb .b { color: #5e8de0; }
+.mp-fmshr { border: 0; border-top: 3px solid #c9ccd4; margin: .5em 0; }
+.mp-fms2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 1em; }
+.mp-fms2 .kv { display: flex; gap: 1.6em; padding-left: 1.2em; }
+.mp-fms2 .kv3 { display: grid; grid-template-columns: auto 1fr; gap: .1em 1em; align-items: baseline; }
+.mp-fms2 .kv3 b { display: inline; } .mp-fms2 .kv3.in { padding-left: 1.2em; }
 .mp-as { background: #3f4a6b; border-radius: 2px; padding: .7em .6em .9em; }
 .mp-ash { text-align: center; font-size: 1.2em; color: #fff; margin-bottom: .7em; }
 .mp-asrow { display: grid; grid-template-columns: 1.1fr 2.6fr .7fr .9fr 1.1fr 1fr; align-items: start; text-align: center; }

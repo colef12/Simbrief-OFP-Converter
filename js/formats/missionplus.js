@@ -170,6 +170,7 @@
     const docs = {};
     if (m.etops) docs['inflight:etops'] = { title: 'ETOPS', html: etopsPage(m) };
     docs['prep:finfo'] = { title: 'Flight Information', html: flightInfoPage(m) };
+    docs['prep:fmsinit'] = { title: 'FMS Initialization', html: fmsInitPage(m) };
     docs['prep:faddl'] = { title: 'Flight Additional Information', html: flightAddlPage(m) };
     return {
       ...docs,
@@ -184,17 +185,11 @@
       },
     };
   }
-  // Flt Prep > Flight Information (per Cole's DAL0183 LIRF-KJFK photos)
-  function flightInfoPage(m) {
+  // Shared by Flight Information and FMS Initialization: perf factor, speeds, TOC data, route, FL steps
+  function fiBits(m) {
     const { o } = m;
-    const ofp = o.raw, g = o.general, ac = ofp.aircraft || {}, s = o.settings || {};
-    const O = o.origin || {}, D = o.dest || {}, A = o.alts[0];
-    const d3 = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${Z(d.getUTCFullYear() % 100, 2)}` : '-');
-    const fltNum = up(g.flight_number).replace(/\D/g, '');
-    const iataAl = up(g.iata_airline);
-    const port = (p) => (p ? [p.icao, p.iata || p.code, p.name].filter(Boolean).join(' / ') : '-');
-    const lt2 = (d, tz) => lt(d, tz) || '-';
-    const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    const ofp = o.raw, g = o.general, ac = ofp.aircraft || {};
+    const O = o.origin || {}, D = o.dest || {};
     // performance factor e.g. "P2.7" / "+2.7" / "-1.0" -> "+02.7%"
     const pfRaw = str(ac.fuelfact ?? ac.fuelfactor ?? ac.perf_factor);
     const pfm = /^([PM+-]?)\s*(\d+(?:\.\d+)?)/i.exec(pfRaw);
@@ -221,13 +216,28 @@
       if (up(f.ident) === 'TOC') { past = true; return; }
       if (up(f.ident) === 'TOD') past = false;
       const alt = num(f.altitude_feet);
-      if (past && alt && cur && Math.abs(alt - cur) >= 1000 && up(f.ident) !== 'TOD') {
+      if (past && alt && cur && alt - cur >= 1000 && up(f.ident) !== 'TOD') {
         const prev = a[i - 1] && !['TOC', 'TOD'].includes(up(a[i - 1].ident)) ? a[i - 1] : f;
         steps.push([up(prev.ident), Math.round(alt / 100)]);
         cur = alt;
       }
     });
     const stepHtml = steps.map(([fx, fl]) => `${esc(fx)}/<span class="b">FL${Z(fl, 3)}</span>`).join('  ');
+    return { pf, spd, cruise, toc, tocWind, tocOat, route, steps, stepHtml };
+  }
+
+  // Flt Prep > Flight Information (per Cole's DAL0183 LIRF-KJFK photos)
+  function flightInfoPage(m) {
+    const { o } = m;
+    const ofp = o.raw, g = o.general, ac = ofp.aircraft || {}, s = o.settings || {};
+    const O = o.origin || {}, D = o.dest || {}, A = o.alts[0];
+    const d3 = (d) => (d ? `${Z(d.getUTCDate(), 2)} ${MON[d.getUTCMonth()]} ${Z(d.getUTCFullYear() % 100, 2)}` : '-');
+    const fltNum = up(g.flight_number).replace(/\D/g, '');
+    const iataAl = up(g.iata_airline);
+    const port = (p) => (p ? [p.icao, p.iata || p.code, p.name].filter(Boolean).join(' / ') : '-');
+    const lt2 = (d, tz) => lt(d, tz) || '-';
+    const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    const { pf, spd, cruise, tocWind, tocOat, route, stepHtml } = fiBits(m);
     // ATC flight plan remarks: equipment line + item 18 + field elevations
     const fpl = str(ofp.atc?.flightplan_text).replace(/[()]/g, '');
     const segs = fpl.split(/\s*\n?-\s*(?=[A-Z0-9])/).map((x) => x.trim()).filter(Boolean);
@@ -292,6 +302,78 @@
         <div class="mp-fisub">MEL/CDL Information</div>
         <pre class="mp-fipre">${esc(melLines.join('\n'))}</pre>
       </div>`;
+  }
+
+  // Flt Prep > FMS Initialization (per Cole's DAL0183 A333 screenshot). The top mirrors the aircraft's
+  // FMS: Airbus types get the MCDU INIT A / INIT FUEL PREDICTION pages; other types show the lower panels.
+  function fmsInitPage(m) {
+    const { o } = m;
+    const ofp = o.raw, g = o.general, f = o.fuel, w = o.wts, t = o.times;
+    const O = o.origin || {}, D = o.dest || {}, A = o.alts[0];
+    const { pf, spd, cruise, toc, tocWind, route, stepHtml } = fiBits(m);
+    const k = (v) => (str(v) === '' ? '' : (o.W(v) / 1000).toFixed(1));
+    const hmm = (sec) => { const mn = Math.round(sec / 60); return `${Z(Math.floor(mn / 60), 2)}:${Z(mn % 60, 2)}`; };
+    const box = (v, cls = '') => `<span class="mp-fb ${cls}">${esc(v ?? '')}</span>`;
+    const tmp = (c) => (str(c) === '' ? '' : `${num(c) < 0 ? 'M' : 'P'}${Z(Math.abs(Math.round(num(c))), 2)}`);
+    const fl0 = num(g.initial_altitude);
+    const trop = num(toc?.tropopause_feet) || num(g.avg_tropopause);
+    const avgW = str(g.avg_wind_dir) !== '' ? `${Z(Math.round(num(g.avg_wind_dir)), 3)}/${Z(Math.round(num(g.avg_wind_spd)), 3)}` : tocWind;
+    const altRaw = asArray(ofp.alternate)[0] || {};
+    const airbus = /^A3\d\d|^A2\d\d|^BCS/.test(o.icaoType);
+    const mcdu = airbus ? `
+      <div class="mp-fms">
+        <div class="mp-fmsc"><div class="mp-fmst">INIT</div><div class="mp-fmsp">
+          <div class="r2"><span>CO RTE</span><span class="rt">FROM / TO</span></div>
+          <div class="r2"><span>${box('', 'w6')}</span><span class="rt">${box(O.icao, 'w3 ra')} / ${box(D.icao, 'w3')}</span></div>
+          <div class="r2"><span>ALTN&nbsp;&nbsp;&nbsp;/ CO RTE</span></div>
+          <div class="r2"><span>${box(A?.icao || '', 'w3')} / ${box('', 'w5')}</span></div>
+          <div class="r2"><span>FLT NBR</span></div>
+          <div class="r2"><span>${box(o.callsign, 'w6')}</span><span class="rt lk">IRS INIT&gt;</span></div>
+          <div class="r2"><span>PAX NBR</span></div>
+          <div class="r2"><span>${box(Math.round(num(w.pax_count)) || '', 'w3')}</span><span class="rt lk">WIND&gt;</span></div>
+          <div class="r2"><span>COST INDEX</span><span class="rt">TROPO</span></div>
+          <div class="r2"><span>${box(str(g.costindex), 'w3')}</span><span class="rt">${trop ? box(String(Math.round(trop / 100) * 100), 'w3 ra') : box('', 'w3')}</span></div>
+          <div class="r2"><span>CRZ FL&nbsp;&nbsp;&nbsp;/ TEMP</span><span class="rt">GND TEMP</span></div>
+          <div class="r2"><span>${box(fl0 ? `FL${Z(Math.round(fl0 / 100), 3)}` : '', 'w3')} / ${box(tmp(toc?.oat), 'w3 ra')}</span><span></span></div>
+        </div></div>
+        <div class="mp-fmsc"><div class="mp-fmst">INIT FUEL PREDICTION</div><div class="mp-fmsp">
+          <div class="r3"><span>TAXI</span><span class="c">ZFW&nbsp;&nbsp;&nbsp;&nbsp;/</span><span class="rt">ZFW CG</span></div>
+          <div class="r3"><span>${box(k(f.taxi), 'w3 ra')}</span><span class="c">${box(k(w.est_zfw), 'w3 ra')} /</span><span></span></div>
+          <div class="r3"><span>TRIP&nbsp;&nbsp;&nbsp;&nbsp;/ TIME</span><span></span><span class="rt">BLOCK</span></div>
+          <div class="r3 v"><span>${esc(k(f.enroute_burn))} / ${esc(hmm(secs(t.est_time_enroute)))}</span><span></span><span class="rt">${box(k(f.plan_ramp), 'w3 ra')}</span></div>
+          <div class="r3"><span>RTE RSV / %</span></div>
+          <div class="r3"><span>${box('', 'w3')} /</span></div>
+          <div class="r3"><span>ALTN&nbsp;&nbsp;&nbsp;&nbsp;/ TIME</span><span class="c">TOW&nbsp;&nbsp;&nbsp;&nbsp;/</span><span class="rt">LW</span></div>
+          <div class="r3 v"><span>${esc(k(f.alternate_burn))} / ${esc(secs(altRaw.ete) ? hmm(secs(altRaw.ete)) : '')}</span><span class="c">${esc(k(w.est_tow))} /</span><span class="rt">${esc(k(w.est_ldw))}</span></div>
+          <div class="r3"><span>FINAL&nbsp;&nbsp;&nbsp;/ TIME</span><span></span><span class="rt">TRIP WIND</span></div>
+          <div class="r3"><span>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;/ ${box(secs(t.reserve_time) ? hmm(secs(t.reserve_time)) : '', 'w3')}</span><span></span><span class="rt">${box(avgW === '-' ? '' : avgW, 'w3 ra')}</span></div>
+          <div class="r3 sp"><span>MIN DEST FOB</span><span class="c">EXTRA&nbsp;&nbsp;/</span><span class="rt">TIME</span></div>
+          <div class="r3 v"><span>&nbsp;&nbsp;${esc((m.fuel.minLdg / 1000).toFixed(1))}</span><span class="c">${esc((m.fuel.delay / 1000).toFixed(1))} /</span><span></span></div>
+        </div></div>
+        <div class="mp-fmsfoot">${esc(o.icaoType)} FMGC</div>
+      </div>` : '';
+    const skip = new Set(['TOC', 'TOD']);
+    const fixes = [O.icao, ...o.navlog.filter((x) => {
+      const id = up(x.ident), ty = String(x.type || '').toLowerCase();
+      return id && !skip.has(id) && !/^(ETP|EEP|EXP|ETOPS)/.test(id) && !['toc', 'tod', 'etp', 'apt'].includes(ty);
+    }).map((x) => up(x.ident)), D.icao].filter(Boolean)
+      .filter((x, i, a) => i === 0 || x !== a[i - 1]);
+    const dev = str(g.avg_temp_dev) === '' ? '-' : tmp(g.avg_temp_dev);
+    return `${mcdu}
+      <div class="mp-fmsb"><b>Flight Plan:</b><div>${route}</div></div>
+      ${stepHtml ? `<div class="mp-fmsb"><b>FL Steps:</b><div>${stepHtml.replace(/  /g, ' ')}</div></div>` : ''}
+      <div class="mp-fmsb"><b>FMS Crosscheck Fix List:</b><div>${esc(fixes.join(' '))}</div></div>
+      <hr class="mp-fmshr">
+      <div class="mp-fmsb mp-fms2">
+        <div><b>Origin:</b><div class="kv"><span>Elevation:</span><span>${Math.round(O.elev || 0)} ft</span></div></div>
+        <div><b>Destination:</b><div class="kv"><span>Elevation:</span><span>${Math.round(D.elev || 0)} ft</span></div></div>
+      </div>
+      <hr class="mp-fmshr">
+      <div class="mp-fmsb mp-fms2">
+        <div class="kv3"><b>Performance Factor:</b><span>${esc(pf)}</span><b>Ground Distance:</b><span>${num(g.route_distance) ? Math.round(num(g.route_distance)) : '-'}</span><b>ISA Deviation:</b><span>${esc(dev)}</span></div>
+        <div><b>Speeds:</b><div class="kv3 in"><span>Climb:</span><span>${esc(spd(g.climb_profile))}</span><span>Cruise:</span><span>${esc(cruise)}</span><span>Descent:</span><span>${esc(spd(g.descent_profile))}</span></div></div>
+      </div>
+      <hr class="mp-fmshr">`;
   }
 
   // Flt Prep > Flight Additional Information: operation type + target landing window
