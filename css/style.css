@@ -329,6 +329,9 @@ main { max-width: 1800px; margin: 0 auto; padding: 24px 16px 60px; }
 .mp-nnone { color: var(--mp-dim); padding: 1em 1.6em; }
 .mp-nc[hidden], .mp-nsub[hidden], .mp-nrwy[hidden], .mp-t-all[hidden] { display: none !important; }
 .mp-ndays.new { color: #f6d55c; }
+.mp-nch > span:not(.mp-grow):not(.mp-npri):not(.mp-nkb) { min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.mp-nch > span:nth-of-type(2) { flex: 0 1 auto; }
+.mp-nch > .mp-grow { flex: 1 1 0; min-width: .3em; }
 .mp-nct mark { background: #f6d55c; color: #111; padding: 0 .1em; } .mp-nct mark.w { background: #fff; }
 .mp-nchip i { font: 400 .5em var(--mp-sans); font-style: normal; color: #4e9bff; border: 1.5px solid #4e9bff; border-radius: 999px; padding: .15em .8em; margin-left: .6em; vertical-align: middle; }
 .mp-nwrap { display: flex; gap: 1em; align-items: flex-start; }
